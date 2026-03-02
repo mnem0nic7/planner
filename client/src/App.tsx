@@ -37,6 +37,7 @@ function App() {
         onSelectProject={handleSelectProject}
         onSelectView={handleSelectView}
         chatOpen={chatOpen}
+        refreshKey={refreshKey}
       >
         {view === "dashboard" && <Dashboard key={refreshKey} onSelectProject={handleSelectProject} />}
         {view === "project" && activeProjectId && <ProjectView key={refreshKey} projectId={activeProjectId} />}

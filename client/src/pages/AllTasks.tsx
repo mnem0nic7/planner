@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import type { Task } from "../lib/types";
 import { TaskRow } from "../components/TaskRow";
+import { TaskDetailPanel } from "../components/TaskDetailPanel";
 import { tasks as tasksApi } from "../lib/api";
 
 export function AllTasks() {
   const [taskList, setTaskList] = useState<Task[]>([]);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const load = async () => {
-    const res = await fetch("/api/tasks");
-    setTaskList(await res.json());
+    const data = await tasksApi.listAll();
+    setTaskList(data);
   };
 
   useEffect(() => { load(); }, []);
@@ -26,10 +28,18 @@ export function AllTasks() {
           <p className="text-center py-8 text-gray-400 text-sm">No tasks yet.</p>
         ) : (
           taskList.map((task) => (
-            <TaskRow key={task.id} task={task} onToggleComplete={handleToggle} onSelect={() => {}} />
+            <TaskRow key={task.id} task={task} onToggleComplete={handleToggle} onSelect={setSelectedTask} />
           ))
         )}
       </div>
+
+      {selectedTask && (
+        <TaskDetailPanel
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+          onUpdate={() => { load(); setSelectedTask(null); }}
+        />
+      )}
     </div>
   );
 }

@@ -13,6 +13,10 @@ if (process.env.NODE_ENV === "production") {
   console.log("Migrations complete.");
 }
 
+if (!process.env.OPENAI_API_KEY) {
+  console.warn("WARNING: OPENAI_API_KEY is not set. AI assistant will not work.");
+}
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

@@ -7,16 +7,17 @@ interface SidebarProps {
   activeView: "dashboard" | "project" | "all-tasks" | "due-soon";
   onSelectProject: (id: string) => void;
   onSelectView: (view: "dashboard" | "all-tasks" | "due-soon") => void;
+  refreshKey?: number;
 }
 
-export function Sidebar({ activeProjectId, activeView, onSelectProject, onSelectView }: SidebarProps) {
+export function Sidebar({ activeProjectId, activeView, onSelectProject, onSelectView, refreshKey }: SidebarProps) {
   const [projectList, setProjectList] = useState<Project[]>([]);
   const [tagList, setTagList] = useState<Tag[]>([]);
 
   useEffect(() => {
     projectsApi.list().then(setProjectList);
     tagsApi.list().then(setTagList);
-  }, []);
+  }, [refreshKey]);
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col">

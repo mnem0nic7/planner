@@ -28,6 +28,8 @@ export const projects = {
 
 // Tasks
 export const tasks = {
+  listAll: () => request<Task[]>("/tasks"),
+  dueSoon: () => request<Task[]>("/tasks/due-soon"),
   list: (projectId: string) => request<Task[]>(`/projects/${projectId}/tasks`),
   create: (projectId: string, data: { title: string; priority?: string; dueDate?: string; description?: string }) =>
     request<Task>(`/projects/${projectId}/tasks`, { method: "POST", body: JSON.stringify(data) }),

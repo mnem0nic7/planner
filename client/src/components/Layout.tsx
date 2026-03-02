@@ -8,9 +8,10 @@ interface LayoutProps {
   onSelectProject: (id: string) => void;
   onSelectView: (view: "dashboard" | "all-tasks" | "due-soon") => void;
   chatOpen?: boolean;
+  refreshKey?: number;
 }
 
-export function Layout({ children, activeProjectId, activeView, onSelectProject, onSelectView, chatOpen }: LayoutProps) {
+export function Layout({ children, activeProjectId, activeView, onSelectProject, onSelectView, chatOpen, refreshKey }: LayoutProps) {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar
@@ -18,6 +19,7 @@ export function Layout({ children, activeProjectId, activeView, onSelectProject,
         activeView={activeView}
         onSelectProject={onSelectProject}
         onSelectView={onSelectView}
+        refreshKey={refreshKey}
       />
       <main
         className="flex-1 overflow-y-auto transition-[margin] duration-300"

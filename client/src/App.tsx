@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Layout } from "./components/Layout";
+import { Dashboard } from "./pages/Dashboard";
 
 type View = "dashboard" | "project" | "all-tasks" | "due-soon";
 
@@ -24,8 +25,8 @@ function App() {
       onSelectProject={handleSelectProject}
       onSelectView={handleSelectView}
     >
+      {view === "dashboard" && <Dashboard onSelectProject={handleSelectProject} />}
       <div className="p-8">
-        {view === "dashboard" && <h2 className="text-xl font-semibold">Dashboard</h2>}
         {view === "project" && <h2 className="text-xl font-semibold">Project: {activeProjectId}</h2>}
         {view === "all-tasks" && <h2 className="text-xl font-semibold">All Tasks</h2>}
         {view === "due-soon" && <h2 className="text-xl font-semibold">Due Soon</h2>}

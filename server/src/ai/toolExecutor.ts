@@ -49,9 +49,15 @@ export async function executeTool(
     }
 
     case "delete_project": {
-      return prisma.project.delete({
-        where: { id: args.projectId as string },
-      });
+      const projectId = args.projectId as string;
+      await prisma.$transaction([
+        prisma.taskTag.deleteMany({
+          where: { task: { projectId } },
+        }),
+        prisma.task.deleteMany({ where: { projectId } }),
+        prisma.project.delete({ where: { id: projectId } }),
+      ]);
+      return { deleted: true };
     }
 
     case "list_tasks": {

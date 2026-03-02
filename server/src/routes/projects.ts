@@ -59,7 +59,13 @@ router.patch("/:id", async (req, res) => {
 
 // DELETE /api/projects/:id
 router.delete("/:id", async (req, res) => {
-  await prisma.project.delete({ where: { id: req.params.id } });
+  await prisma.$transaction([
+    prisma.taskTag.deleteMany({
+      where: { task: { projectId: req.params.id } },
+    }),
+    prisma.task.deleteMany({ where: { projectId: req.params.id } }),
+    prisma.project.delete({ where: { id: req.params.id } }),
+  ]);
   res.status(204).send();
 });
 

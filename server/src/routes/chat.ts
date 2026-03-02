@@ -31,6 +31,11 @@ router.get("/conversations/:id", async (req, res) => {
 
 // DELETE /api/conversations/:id
 router.delete("/conversations/:id", async (req, res) => {
+  const existing = await prisma.conversation.findUnique({ where: { id: req.params.id } });
+  if (!existing) {
+    res.status(404).json({ error: "Conversation not found" });
+    return;
+  }
   await prisma.conversation.delete({ where: { id: req.params.id } });
   res.status(204).send();
 });

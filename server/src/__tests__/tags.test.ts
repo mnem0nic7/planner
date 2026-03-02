@@ -38,6 +38,11 @@ describe("Tags API", () => {
       const res = await request(app).delete(`/api/tags/${tag.id}`);
       expect(res.status).toBe(204);
     });
+
+    it("returns 404 for nonexistent tag", async () => {
+      const res = await request(app).delete("/api/tags/nonexistent");
+      expect(res.status).toBe(404);
+    });
   });
 
   describe("Task-Tag association", () => {

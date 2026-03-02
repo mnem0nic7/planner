@@ -36,6 +36,7 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   tags: TaskTag[];
+  project?: { id: string; name: string; color: string | null };
 }
 
 export interface Conversation {

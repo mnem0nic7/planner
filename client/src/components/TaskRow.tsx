@@ -4,6 +4,7 @@ interface TaskRowProps {
   task: Task;
   onToggleComplete: (id: string) => void;
   onSelect: (task: Task) => void;
+  showProject?: boolean;
 }
 
 const PRIORITY_STYLES: Record<string, string> = {
@@ -13,7 +14,7 @@ const PRIORITY_STYLES: Record<string, string> = {
   URGENT: "bg-red-100 text-red-700",
 };
 
-export function TaskRow({ task, onToggleComplete, onSelect }: TaskRowProps) {
+export function TaskRow({ task, onToggleComplete, onSelect, showProject }: TaskRowProps) {
   const isOverdue = task.dueDate && !task.completed && new Date(task.dueDate) < new Date();
 
   return (
@@ -35,6 +36,14 @@ export function TaskRow({ task, onToggleComplete, onSelect }: TaskRowProps) {
         <span className={`text-sm ${task.completed ? "line-through text-gray-400" : "text-gray-900"}`}>
           {task.title}
         </span>
+        {showProject && task.project && (
+          <span className="ml-2 text-xs text-gray-400">
+            {task.project.color && (
+              <span className="inline-block w-1.5 h-1.5 rounded-full mr-1 align-middle" style={{ backgroundColor: task.project.color }} />
+            )}
+            {task.project.name}
+          </span>
+        )}
       </button>
       <div className="flex items-center gap-2 flex-shrink-0">
         {task.tags.map(({ tag }) => (

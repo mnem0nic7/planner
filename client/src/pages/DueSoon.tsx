@@ -38,7 +38,7 @@ export function DueSoon() {
           <p className="text-center py-8 text-gray-400 text-sm">No upcoming deadlines. Nice!</p>
         ) : (
           taskList.map((task) => (
-            <TaskRow key={task.id} task={task} onToggleComplete={handleToggle} onSelect={setSelectedTask} />
+            <TaskRow key={task.id} task={task} onToggleComplete={handleToggle} onSelect={setSelectedTask} showProject />
           ))
         )}
       </div>

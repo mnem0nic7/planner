@@ -146,6 +146,43 @@ describe("Tasks API", () => {
     });
   });
 
+  describe("POST /api/projects/:id/tasks validation", () => {
+    it("returns 404 for nonexistent project", async () => {
+      const res = await request(app)
+        .post("/api/projects/nonexistent/tasks")
+        .send({ title: "Orphan" });
+      expect(res.status).toBe(404);
+    });
+
+    it("rejects invalid priority", async () => {
+      const res = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .send({ title: "T", priority: "SUPER" });
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects invalid due date", async () => {
+      const res = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .send({ title: "T", dueDate: "not-a-date" });
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe("POST /api/tasks/:id/tags duplicate check", () => {
+    it("returns 409 when adding duplicate tag", async () => {
+      const task = await prisma.task.create({
+        data: { title: "T", projectId, sortOrder: 0 },
+      });
+      const tag = await prisma.tag.create({ data: { name: "dup-test" } });
+      await prisma.taskTag.create({ data: { taskId: task.id, tagId: tag.id } });
+      const res = await request(app)
+        .post(`/api/tasks/${task.id}/tags`)
+        .send({ tagId: tag.id });
+      expect(res.status).toBe(409);
+    });
+  });
+
   describe("GET /api/tasks/due-soon", () => {
     it("returns tasks due within 7 days", async () => {
       const p = await prisma.project.create({ data: { name: "P" } });

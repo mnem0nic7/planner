@@ -1,8 +1,36 @@
+import { useState } from "react";
+import { Layout } from "./components/Layout";
+
+type View = "dashboard" | "project" | "all-tasks" | "due-soon";
+
 function App() {
+  const [view, setView] = useState<View>("dashboard");
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+
+  const handleSelectProject = (id: string) => {
+    setActiveProjectId(id);
+    setView("project");
+  };
+
+  const handleSelectView = (v: "dashboard" | "all-tasks" | "due-soon") => {
+    setActiveProjectId(null);
+    setView(v);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <h1 className="text-2xl font-bold p-8">Planner</h1>
-    </div>
+    <Layout
+      activeProjectId={activeProjectId}
+      activeView={view}
+      onSelectProject={handleSelectProject}
+      onSelectView={handleSelectView}
+    >
+      <div className="p-8">
+        {view === "dashboard" && <h2 className="text-xl font-semibold">Dashboard</h2>}
+        {view === "project" && <h2 className="text-xl font-semibold">Project: {activeProjectId}</h2>}
+        {view === "all-tasks" && <h2 className="text-xl font-semibold">All Tasks</h2>}
+        {view === "due-soon" && <h2 className="text-xl font-semibold">Due Soon</h2>}
+      </div>
+    </Layout>
   );
 }
 

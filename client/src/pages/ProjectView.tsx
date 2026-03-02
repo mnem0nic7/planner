@@ -45,6 +45,11 @@ export function ProjectView({ projectId }: ProjectViewProps) {
     }
   };
 
+  if (error && !project) return (
+    <div className="p-8">
+      <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded">{error}</div>
+    </div>
+  );
   if (!project) return <div className="p-8 text-gray-400">Loading...</div>;
 
   const completedCount = taskList.filter((t) => t.completed).length;

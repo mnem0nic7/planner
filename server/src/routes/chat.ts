@@ -67,7 +67,7 @@ router.post("/chat", async (req, res) => {
 
   // Get or create conversation
   let conversation;
-  if (conversationId) {
+  if (conversationId && typeof conversationId === "string" && conversationId.length < 100) {
     conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
       include: { messages: { orderBy: { createdAt: "asc" } } },

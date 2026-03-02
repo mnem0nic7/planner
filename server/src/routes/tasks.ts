@@ -109,8 +109,8 @@ router.patch("/tasks/reorder", async (req, res) => {
     return;
   }
   for (const item of items) {
-    if (!item || typeof item.id !== "string" || typeof item.sortOrder !== "number"
-        || !Number.isInteger(item.sortOrder) || item.sortOrder < 0) {
+    if (!item || typeof item.id !== "string" || !item.id.trim() || item.id.length > 100
+        || typeof item.sortOrder !== "number" || !Number.isInteger(item.sortOrder) || item.sortOrder < 0) {
       res.status(400).json({ error: "Each item must have an id (string) and sortOrder (non-negative integer)" });
       return;
     }

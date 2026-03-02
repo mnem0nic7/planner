@@ -129,7 +129,7 @@ export function TaskDetailPanel({ task, onClose, onUpdate }: TaskDetailPanelProp
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Markdown)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}

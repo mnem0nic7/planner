@@ -97,6 +97,19 @@ describe("Projects API", () => {
     });
   });
 
+  describe("PATCH /api/projects/:id validation", () => {
+    it("returns 404 for nonexistent project", async () => {
+      const res = await request(app).patch("/api/projects/nonexistent").send({ name: "X" });
+      expect(res.status).toBe(404);
+    });
+
+    it("rejects invalid color", async () => {
+      const project = await prisma.project.create({ data: { name: "PatchColor" } });
+      const res = await request(app).patch(`/api/projects/${project.id}`).send({ color: "bad" });
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe("DELETE /api/projects/:id", () => {
     it("deletes a project and its tasks", async () => {
       const project = await prisma.project.create({
@@ -112,6 +125,11 @@ describe("Projects API", () => {
         where: { projectId: project.id },
       });
       expect(tasks).toHaveLength(0);
+    });
+
+    it("returns 404 for nonexistent project", async () => {
+      const res = await request(app).delete("/api/projects/nonexistent");
+      expect(res.status).toBe(404);
     });
   });
 });

@@ -8,6 +8,7 @@ export function AllTasks() {
   const [taskList, setTaskList] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
     try {
@@ -15,6 +16,8 @@ export function AllTasks() {
       setTaskList(data);
     } catch {
       setError("Failed to load tasks");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -39,7 +42,9 @@ export function AllTasks() {
       )}
       <h2 className="text-2xl font-bold text-gray-900 mb-6">All Tasks</h2>
       <div className="space-y-2">
-        {taskList.length === 0 ? (
+        {loading ? (
+          <p className="text-center py-8 text-gray-400 text-sm">Loading tasks...</p>
+        ) : taskList.length === 0 ? (
           <p className="text-center py-8 text-gray-400 text-sm">No tasks yet.</p>
         ) : (
           taskList.map((task) => (

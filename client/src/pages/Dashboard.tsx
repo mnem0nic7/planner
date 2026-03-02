@@ -12,9 +12,13 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
   const [projectList, setProjectList] = useState<Project[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const loadProjects = () => {
-    projectsApi.list().then(setProjectList).catch(() => setError("Failed to load projects"));
+    projectsApi.list()
+      .then(setProjectList)
+      .catch(() => setError("Failed to load projects"))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { loadProjects(); }, []);
@@ -46,7 +50,11 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
         </button>
       </div>
 
-      {projectList.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-16 text-gray-400">
+          <p className="text-sm">Loading projects...</p>
+        </div>
+      ) : projectList.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <p className="text-lg mb-2">No projects yet</p>
           <p className="text-sm">Create your first project to get started.</p>

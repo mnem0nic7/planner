@@ -69,6 +69,17 @@ describe("Tasks API", () => {
       expect(res.body.priority).toBe("URGENT");
       expect(res.body.description).toBe("# Notes");
     });
+
+    it("returns 404 for nonexistent task", async () => {
+      const res = await request(app).patch("/api/tasks/nonexistent").send({ title: "X" });
+      expect(res.status).toBe(404);
+    });
+
+    it("rejects invalid priority", async () => {
+      const task = await prisma.task.create({ data: { title: "T", projectId, sortOrder: 0 } });
+      const res = await request(app).patch(`/api/tasks/${task.id}`).send({ priority: "SUPER" });
+      expect(res.status).toBe(400);
+    });
   });
 
   describe("PATCH /api/tasks/:id/complete", () => {
@@ -150,6 +161,11 @@ describe("Tasks API", () => {
       });
       const res = await request(app).delete(`/api/tasks/${task.id}`);
       expect(res.status).toBe(204);
+    });
+
+    it("returns 404 for nonexistent task", async () => {
+      const res = await request(app).delete("/api/tasks/nonexistent");
+      expect(res.status).toBe(404);
     });
   });
 

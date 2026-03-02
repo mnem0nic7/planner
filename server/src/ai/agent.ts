@@ -47,7 +47,7 @@ export async function streamChat(
     iterations++;
 
     const stream = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: process.env.OPENAI_MODEL || "gpt-4o",
       messages,
       tools,
       stream: true,
@@ -91,7 +91,21 @@ export async function streamChat(
       messages.push(assistantMsg);
       newMessages.push(assistantMsg);
 
-      const toolCalls = [...toolCallAccumulators.values()].slice(0, MAX_TOOLS_PER_ROUND);
+      const allToolCalls = [...toolCallAccumulators.values()];
+      const toolCalls = allToolCalls.slice(0, MAX_TOOLS_PER_ROUND);
+
+      // If we're truncating, also truncate the assistant message's tool_calls to match
+      if (allToolCalls.length > MAX_TOOLS_PER_ROUND) {
+        const assistantMsg = messages[messages.length - 1] as { tool_calls?: unknown[] };
+        if (assistantMsg.tool_calls) {
+          assistantMsg.tool_calls = assistantMsg.tool_calls.slice(0, MAX_TOOLS_PER_ROUND);
+        }
+        const newAssistantMsg = newMessages[newMessages.length - 1] as { tool_calls?: unknown[] };
+        if (newAssistantMsg.tool_calls) {
+          newAssistantMsg.tool_calls = newAssistantMsg.tool_calls.slice(0, MAX_TOOLS_PER_ROUND);
+        }
+      }
+
       for (const tc of toolCalls) {
         if (abortSignal?.aborted) break;
 

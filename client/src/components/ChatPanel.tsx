@@ -241,7 +241,7 @@ export function ChatPanel({ open, onClose, onDataChange }: ChatPanelProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed top-0 right-0 h-full w-[480px] bg-white border-l border-gray-200 shadow-lg flex flex-col z-40">
+    <div className="fixed top-0 right-0 h-full w-full sm:w-[480px] max-w-full bg-white border-l border-gray-200 shadow-lg flex flex-col z-40">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
         <h2 className="font-semibold text-gray-900">AI Assistant</h2>

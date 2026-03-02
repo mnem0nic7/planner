@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { tasks as tasksApi, tags as tagsApi } from "../lib/api";
 import type { Task, Tag, Priority } from "../lib/types";
 
@@ -17,12 +17,16 @@ export function TaskDetailPanel({ task, onClose, onUpdate }: TaskDetailPanelProp
   const [dueDate, setDueDate] = useState(task.dueDate?.split("T")[0] || "");
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     tagsApi.list().then(setAllTags).catch(() => { /* tags load is non-critical */ });
   }, []);
 
+  // Save on blur — uses a ref to prevent concurrent saves
   const handleSave = async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
     try {
       await tasksApi.update(task.id, {
         title,
@@ -33,6 +37,8 @@ export function TaskDetailPanel({ task, onClose, onUpdate }: TaskDetailPanelProp
       onUpdate();
     } catch {
       setError("Failed to save changes");
+    } finally {
+      savingRef.current = false;
     }
   };
 
@@ -97,8 +103,12 @@ export function TaskDetailPanel({ task, onClose, onUpdate }: TaskDetailPanelProp
             <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
             <select
               value={priority}
-              onChange={(e) => { setPriority(e.target.value as Priority); }}
-              onBlur={handleSave}
+              onChange={(e) => {
+                const newPriority = e.target.value as Priority;
+                setPriority(newPriority);
+                // Save immediately since select onChange means the value is final
+                tasksApi.update(task.id, { priority: newPriority }).then(onUpdate).catch(() => setError("Failed to save changes"));
+              }}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {PRIORITIES.map((p) => (

@@ -3,6 +3,7 @@ import { projects as projectsApi, tasks as tasksApi } from "../lib/api";
 import type { Project, Task } from "../lib/types";
 import { TaskRow } from "../components/TaskRow";
 import { CreateTaskForm } from "../components/CreateTaskForm";
+import { TaskDetailPanel } from "../components/TaskDetailPanel";
 
 interface ProjectViewProps {
   projectId: string;
@@ -11,6 +12,7 @@ interface ProjectViewProps {
 export function ProjectView({ projectId }: ProjectViewProps) {
   const [project, setProject] = useState<Project | null>(null);
   const [taskList, setTaskList] = useState<Task[]>([]);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const load = async () => {
     const p = await projectsApi.get(projectId);
@@ -62,11 +64,19 @@ export function ProjectView({ projectId }: ProjectViewProps) {
               key={task.id}
               task={task}
               onToggleComplete={handleToggleComplete}
-              onSelect={() => {}}
+              onSelect={(task) => setSelectedTask(task)}
             />
           ))
         )}
       </div>
+
+      {selectedTask && (
+        <TaskDetailPanel
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+          onUpdate={() => { load(); setSelectedTask(null); }}
+        />
+      )}
     </div>
   );
 }

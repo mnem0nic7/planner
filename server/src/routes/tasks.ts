@@ -198,10 +198,15 @@ router.post("/tasks/:id/tags", async (req, res) => {
 
 // DELETE /api/tasks/:id/tags/:tagId
 router.delete("/tasks/:id/tags/:tagId", async (req, res) => {
+  const existing = await prisma.taskTag.findUnique({
+    where: { taskId_tagId: { taskId: req.params.id, tagId: req.params.tagId } },
+  });
+  if (!existing) {
+    res.status(404).json({ error: "Tag not on task" });
+    return;
+  }
   await prisma.taskTag.delete({
-    where: {
-      taskId_tagId: { taskId: req.params.id, tagId: req.params.tagId },
-    },
+    where: { taskId_tagId: { taskId: req.params.id, tagId: req.params.tagId } },
   });
   res.status(204).send();
 });

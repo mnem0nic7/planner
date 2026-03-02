@@ -61,5 +61,10 @@ describe("Conversations API", () => {
       });
       expect(messages).toHaveLength(0);
     });
+
+    it("returns 404 for nonexistent conversation", async () => {
+      const res = await request(app).delete("/api/conversations/nonexistent");
+      expect(res.status).toBe(404);
+    });
   });
 });

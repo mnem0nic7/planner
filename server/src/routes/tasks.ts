@@ -99,4 +99,23 @@ router.delete("/tasks/:id", async (req, res) => {
   res.status(204).send();
 });
 
+// POST /api/tasks/:id/tags
+router.post("/tasks/:id/tags", async (req, res) => {
+  const { tagId } = req.body;
+  await prisma.taskTag.create({
+    data: { taskId: req.params.id, tagId },
+  });
+  res.status(201).json({ success: true });
+});
+
+// DELETE /api/tasks/:id/tags/:tagId
+router.delete("/tasks/:id/tags/:tagId", async (req, res) => {
+  await prisma.taskTag.delete({
+    where: {
+      taskId_tagId: { taskId: req.params.id, tagId: req.params.tagId },
+    },
+  });
+  res.status(204).send();
+});
+
 export { router as taskRoutes };

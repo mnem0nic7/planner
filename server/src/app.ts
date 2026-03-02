@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { projectRoutes } from "./routes/projects.js";
 import { taskRoutes } from "./routes/tasks.js";
+import { tagRoutes } from "./routes/tags.js";
 
 const app = express();
 
@@ -14,5 +15,6 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/projects", projectRoutes);
 app.use("/api", taskRoutes);
+app.use("/api/tags", tagRoutes);
 
 export { app };

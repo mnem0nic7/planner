@@ -37,3 +37,22 @@ export interface Task {
   updatedAt: string;
   tags: TaskTag[];
 }
+
+export interface Conversation {
+  id: string;
+  title: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { messages: number };
+  messages?: ChatMessage[];
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant" | "tool";
+  content: string | null;
+  toolCalls: string | null;
+  toolCallId: string | null;
+  createdAt: string;
+  conversationId: string;
+}

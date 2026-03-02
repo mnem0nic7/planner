@@ -1,4 +1,4 @@
-import type { Project, Task, Tag } from "./types";
+import type { Project, Task, Tag, Conversation } from "./types";
 
 const BASE = "/api";
 
@@ -50,4 +50,11 @@ export const tags = {
   create: (data: { name: string; color?: string }) =>
     request<Tag>("/tags", { method: "POST", body: JSON.stringify(data) }),
   delete: (id: string) => request<void>(`/tags/${id}`, { method: "DELETE" }),
+};
+
+// Chat
+export const chat = {
+  conversations: () => request<Conversation[]>("/conversations"),
+  getConversation: (id: string) => request<Conversation>(`/conversations/${id}`),
+  deleteConversation: (id: string) => request<void>(`/conversations/${id}`, { method: "DELETE" }),
 };

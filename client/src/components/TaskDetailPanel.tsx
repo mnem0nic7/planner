@@ -62,7 +62,14 @@ export function TaskDetailPanel({ task, onClose, onUpdate }: TaskDetailPanelProp
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex justify-end z-50" onClick={onClose}>
+    <div
+      className="fixed inset-0 bg-black/50 flex justify-end z-50"
+      onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Task details"
+    >
       <div className="w-full max-w-md bg-white h-full overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold">Task Details</h3>

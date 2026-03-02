@@ -2,15 +2,14 @@ import { prisma } from "../db.js";
 import { beforeEach, afterAll } from "vitest";
 
 beforeEach(async () => {
-  // Use transaction to ensure all deletes complete atomically
-  await prisma.$transaction([
-    prisma.message.deleteMany(),
-    prisma.conversation.deleteMany(),
-    prisma.taskTag.deleteMany(),
-    prisma.task.deleteMany(),
-    prisma.tag.deleteMany(),
-    prisma.project.deleteMany(),
-  ]);
+  await prisma.$transaction(async (tx) => {
+    await tx.message.deleteMany();
+    await tx.conversation.deleteMany();
+    await tx.taskTag.deleteMany();
+    await tx.task.deleteMany();
+    await tx.tag.deleteMany();
+    await tx.project.deleteMany();
+  });
 });
 
 afterAll(async () => {

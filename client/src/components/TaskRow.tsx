@@ -27,10 +27,12 @@ export function TaskRow({ task, onToggleComplete, onSelect, showProject }: TaskR
         type="checkbox"
         checked={task.completed}
         onChange={() => onToggleComplete(task.id)}
+        aria-label={`Mark "${task.title}" as ${task.completed ? "incomplete" : "complete"}`}
         className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
       />
       <button
         onClick={() => onSelect(task)}
+        aria-label={`View details for "${task.title}"`}
         className="flex-1 text-left min-w-0"
       >
         <span className={`text-sm ${task.completed ? "line-through text-gray-400" : "text-gray-900"}`}>
@@ -39,7 +41,7 @@ export function TaskRow({ task, onToggleComplete, onSelect, showProject }: TaskR
         {showProject && task.project && (
           <span className="ml-2 text-xs text-gray-400">
             {task.project.color && (
-              <span className="inline-block w-1.5 h-1.5 rounded-full mr-1 align-middle" style={{ backgroundColor: task.project.color }} />
+              <span aria-hidden="true" className="inline-block w-1.5 h-1.5 rounded-full mr-1 align-middle" style={{ backgroundColor: task.project.color }} />
             )}
             {task.project.name}
           </span>

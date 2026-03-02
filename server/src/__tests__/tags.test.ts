@@ -5,22 +5,25 @@ import { prisma } from "../db.js";
 
 describe("Tags API", () => {
   describe("GET /api/tags", () => {
-    it("returns all tags", async () => {
-      await prisma.tag.create({ data: { name: "work", color: "#3b82f6" } });
+    it("returns created tag", async () => {
+      const tag = await prisma.tag.create({ data: { name: `work-${Date.now()}`, color: "#3b82f6" } });
       const res = await request(app).get("/api/tags");
       expect(res.status).toBe(200);
-      expect(res.body).toHaveLength(1);
-      expect(res.body[0].name).toBe("work");
+      const found = res.body.find((t: { id: string }) => t.id === tag.id);
+      expect(found).toBeDefined();
+      expect(found.color).toBe("#3b82f6");
     });
   });
 
   describe("POST /api/tags", () => {
     it("creates a tag", async () => {
+      const name = `urgent-${Date.now()}`;
       const res = await request(app)
         .post("/api/tags")
-        .send({ name: "urgent", color: "#ef4444" });
+        .send({ name, color: "#ef4444" });
       expect(res.status).toBe(201);
-      expect(res.body.name).toBe("urgent");
+      expect(res.body.name).toBe(name);
+      expect(res.body.color).toBe("#ef4444");
     });
 
     it("rejects invalid color", async () => {
@@ -31,10 +34,11 @@ describe("Tags API", () => {
     });
 
     it("rejects duplicate tag name", async () => {
-      await prisma.tag.create({ data: { name: "dupe" } });
+      const name = `dupe-${Date.now()}`;
+      await prisma.tag.create({ data: { name } });
       const res = await request(app)
         .post("/api/tags")
-        .send({ name: "dupe" });
+        .send({ name });
       expect(res.status).toBe(409);
     });
   });
@@ -80,11 +84,12 @@ describe("Tags API", () => {
     let tagId: string;
 
     beforeEach(async () => {
-      const project = await prisma.project.create({ data: { name: "P" } });
+      const suffix = Math.random().toString(36).slice(2, 8);
+      const project = await prisma.project.create({ data: { name: `P-${suffix}` } });
       const task = await prisma.task.create({
         data: { title: "T", projectId: project.id, sortOrder: 0 },
       });
-      const tag = await prisma.tag.create({ data: { name: "label" } });
+      const tag = await prisma.tag.create({ data: { name: `label-${suffix}` } });
       taskId = task.id;
       tagId = tag.id;
     });

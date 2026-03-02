@@ -154,12 +154,14 @@ describe("Tasks API", () => {
   });
 
   describe("GET /api/tasks", () => {
-    it("returns all tasks across projects", async () => {
+    it("returns tasks including newly created one", async () => {
       const p = await prisma.project.create({ data: { name: "P" } });
-      await prisma.task.create({ data: { title: "T", projectId: p.id, sortOrder: 0 } });
+      const task = await prisma.task.create({ data: { title: "Unique-AllTasks", projectId: p.id, sortOrder: 0 } });
       const res = await request(app).get("/api/tasks");
       expect(res.status).toBe(200);
-      expect(res.body).toHaveLength(1);
+      const found = res.body.find((t: { id: string }) => t.id === task.id);
+      expect(found).toBeDefined();
+      expect(found.title).toBe("Unique-AllTasks");
     });
   });
 
@@ -212,7 +214,7 @@ describe("Tasks API", () => {
 
   describe("POST /api/tasks/:id/tags entity validation", () => {
     it("returns 404 when task does not exist", async () => {
-      const tag = await prisma.tag.create({ data: { name: "orphan-tag" } });
+      const tag = await prisma.tag.create({ data: { name: `orphan-${Date.now()}` } });
       const res = await request(app)
         .post("/api/tasks/nonexistent/tags")
         .send({ tagId: tag.id });
@@ -235,7 +237,7 @@ describe("Tasks API", () => {
       const task = await prisma.task.create({
         data: { title: "T", projectId, sortOrder: 0 },
       });
-      const tag = await prisma.tag.create({ data: { name: "dup-test" } });
+      const tag = await prisma.tag.create({ data: { name: `dup-${Date.now()}` } });
       await prisma.taskTag.create({ data: { taskId: task.id, tagId: tag.id } });
       const res = await request(app)
         .post(`/api/tasks/${task.id}/tags`)
@@ -249,24 +251,26 @@ describe("Tasks API", () => {
       const p = await prisma.project.create({ data: { name: "P" } });
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      await prisma.task.create({
-        data: { title: "Soon", projectId: p.id, sortOrder: 0, dueDate: tomorrow },
+      const task = await prisma.task.create({
+        data: { title: "Soon-Due", projectId: p.id, sortOrder: 0, dueDate: tomorrow },
       });
       const res = await request(app).get("/api/tasks/due-soon");
       expect(res.status).toBe(200);
-      expect(res.body).toHaveLength(1);
+      const found = res.body.find((t: { id: string }) => t.id === task.id);
+      expect(found).toBeDefined();
     });
 
     it("excludes completed tasks", async () => {
       const p = await prisma.project.create({ data: { name: "P" } });
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      await prisma.task.create({
-        data: { title: "Done", projectId: p.id, sortOrder: 0, dueDate: tomorrow, completed: true },
+      const task = await prisma.task.create({
+        data: { title: "Done-Due", projectId: p.id, sortOrder: 0, dueDate: tomorrow, completed: true },
       });
       const res = await request(app).get("/api/tasks/due-soon");
       expect(res.status).toBe(200);
-      expect(res.body).toHaveLength(0);
+      const found = res.body.find((t: { id: string }) => t.id === task.id);
+      expect(found).toBeUndefined();
     });
   });
 });

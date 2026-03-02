@@ -3,7 +3,7 @@ import { useState } from "react";
 interface CreateProjectDialogProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (data: { name: string; description?: string; color?: string }) => void;
+  onCreate: (data: { name: string; description?: string; color?: string }) => Promise<void> | void;
 }
 
 const COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
@@ -12,21 +12,34 @@ export function CreateProjectDialog({ open, onClose, onCreate }: CreateProjectDi
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState(COLORS[0]);
+  const [submitting, setSubmitting] = useState(false);
 
   if (!open) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-    onCreate({ name: name.trim(), description: description.trim() || undefined, color });
-    setName("");
-    setDescription("");
-    setColor(COLORS[0]);
-    onClose();
+    if (!name.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      await onCreate({ name: name.trim(), description: description.trim() || undefined, color });
+      setName("");
+      setDescription("");
+      setColor(COLORS[0]);
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Create new project"
+    >
       <div className="bg-white rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-semibold mb-4">New Project</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -58,6 +71,8 @@ export function CreateProjectDialog({ open, onClose, onCreate }: CreateProjectDi
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
+                  aria-label={`Color ${c}`}
+                  aria-pressed={color === c}
                   className={`w-8 h-8 rounded-full border-2 ${color === c ? "border-gray-900" : "border-transparent"}`}
                   style={{ backgroundColor: c }}
                 />
@@ -70,10 +85,10 @@ export function CreateProjectDialog({ open, onClose, onCreate }: CreateProjectDi
             </button>
             <button
               type="submit"
-              disabled={!name.trim()}
+              disabled={!name.trim() || submitting}
               className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
             >
-              Create
+              {submitting ? "Creating..." : "Create"}
             </button>
           </div>
         </form>

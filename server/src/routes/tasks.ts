@@ -3,6 +3,30 @@ import { prisma } from "../db.js";
 
 const router = Router();
 
+// GET /api/tasks (all tasks across projects)
+router.get("/tasks", async (_req, res) => {
+  const tasks = await prisma.task.findMany({
+    include: { tags: { include: { tag: true } }, project: true },
+    orderBy: { createdAt: "desc" },
+  });
+  res.json(tasks);
+});
+
+// GET /api/tasks/due-soon
+router.get("/tasks/due-soon", async (_req, res) => {
+  const nextWeek = new Date();
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  const tasks = await prisma.task.findMany({
+    where: {
+      completed: false,
+      dueDate: { lte: nextWeek, not: null },
+    },
+    include: { tags: { include: { tag: true } }, project: true },
+    orderBy: { dueDate: "asc" },
+  });
+  res.json(tasks);
+});
+
 // GET /api/projects/:id/tasks
 router.get("/projects/:id/tasks", async (req, res) => {
   const tasks = await prisma.task.findMany({

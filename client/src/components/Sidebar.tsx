@@ -15,8 +15,8 @@ export function Sidebar({ activeProjectId, activeView, onSelectProject, onSelect
   const [tagList, setTagList] = useState<Tag[]>([]);
 
   useEffect(() => {
-    projectsApi.list().then(setProjectList);
-    tagsApi.list().then(setTagList);
+    projectsApi.list().then(setProjectList).catch(() => { /* sidebar load is non-critical */ });
+    tagsApi.list().then(setTagList).catch(() => { /* sidebar load is non-critical */ });
   }, [refreshKey]);
 
   return (

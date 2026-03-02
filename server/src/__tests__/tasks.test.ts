@@ -186,6 +186,50 @@ describe("Tasks API", () => {
     });
   });
 
+  describe("POST /api/projects/:id/tasks string validation", () => {
+    it("rejects whitespace-only title", async () => {
+      const res = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .send({ title: "   " });
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects oversized title", async () => {
+      const res = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .send({ title: "x".repeat(501) });
+      expect(res.status).toBe(400);
+    });
+
+    it("trims title whitespace", async () => {
+      const res = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .send({ title: "  My Task  " });
+      expect(res.status).toBe(201);
+      expect(res.body.title).toBe("My Task");
+    });
+  });
+
+  describe("POST /api/tasks/:id/tags entity validation", () => {
+    it("returns 404 when task does not exist", async () => {
+      const tag = await prisma.tag.create({ data: { name: "orphan-tag" } });
+      const res = await request(app)
+        .post("/api/tasks/nonexistent/tags")
+        .send({ tagId: tag.id });
+      expect(res.status).toBe(404);
+    });
+
+    it("returns 404 when tag does not exist", async () => {
+      const task = await prisma.task.create({
+        data: { title: "T", projectId, sortOrder: 0 },
+      });
+      const res = await request(app)
+        .post(`/api/tasks/${task.id}/tags`)
+        .send({ tagId: "nonexistent" });
+      expect(res.status).toBe(404);
+    });
+  });
+
   describe("POST /api/tasks/:id/tags duplicate check", () => {
     it("returns 409 when adding duplicate tag", async () => {
       const task = await prisma.task.create({

@@ -13,23 +13,36 @@ export function ProjectView({ projectId }: ProjectViewProps) {
   const [project, setProject] = useState<Project | null>(null);
   const [taskList, setTaskList] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
-    const p = await projectsApi.get(projectId);
-    setProject(p);
-    setTaskList(p.tasks || []);
+    try {
+      const p = await projectsApi.get(projectId);
+      setProject(p);
+      setTaskList(p.tasks || []);
+    } catch {
+      setError("Failed to load project");
+    }
   };
 
   useEffect(() => { load(); }, [projectId]);
 
   const handleToggleComplete = async (taskId: string) => {
-    await tasksApi.toggleComplete(taskId);
-    load();
+    try {
+      await tasksApi.toggleComplete(taskId);
+      load();
+    } catch {
+      setError("Failed to toggle task");
+    }
   };
 
   const handleCreateTask = async (data: { title: string }) => {
-    await tasksApi.create(projectId, data);
-    load();
+    try {
+      await tasksApi.create(projectId, data);
+      load();
+    } catch {
+      setError("Failed to create task");
+    }
   };
 
   if (!project) return <div className="p-8 text-gray-400">Loading...</div>;
@@ -38,6 +51,12 @@ export function ProjectView({ projectId }: ProjectViewProps) {
 
   return (
     <div className="p-8 max-w-3xl">
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded flex justify-between items-center">
+          {error}
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">&times;</button>
+        </div>
+      )}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
           {project.color && (

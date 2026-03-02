@@ -144,6 +144,12 @@ export async function executeTool(
     case "add_tag_to_task": {
       const taskId = args.taskId as string;
       const tagId = args.tagId as string;
+      const [taskExists, tagExists] = await Promise.all([
+        prisma.task.findUnique({ where: { id: taskId }, select: { id: true } }),
+        prisma.tag.findUnique({ where: { id: tagId }, select: { id: true } }),
+      ]);
+      if (!taskExists) throw new Error(`Task not found: ${taskId}`);
+      if (!tagExists) throw new Error(`Tag not found: ${tagId}`);
       const existingLink = await prisma.taskTag.findUnique({
         where: { taskId_tagId: { taskId, tagId } },
       });
@@ -152,13 +158,14 @@ export async function executeTool(
     }
 
     case "remove_tag_from_task": {
+      const taskId = args.taskId as string;
+      const tagId = args.tagId as string;
+      const link = await prisma.taskTag.findUnique({
+        where: { taskId_tagId: { taskId, tagId } },
+      });
+      if (!link) throw new Error(`Tag ${tagId} is not on task ${taskId}`);
       return prisma.taskTag.delete({
-        where: {
-          taskId_tagId: {
-            taskId: args.taskId as string,
-            tagId: args.tagId as string,
-          },
-        },
+        where: { taskId_tagId: { taskId, tagId } },
       });
     }
 

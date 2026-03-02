@@ -39,6 +39,29 @@ describe("Tags API", () => {
     });
   });
 
+  describe("POST /api/tags validation", () => {
+    it("rejects whitespace-only name", async () => {
+      const res = await request(app).post("/api/tags").send({ name: "   " });
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects non-string name", async () => {
+      const res = await request(app).post("/api/tags").send({ name: 42 });
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects oversized name", async () => {
+      const res = await request(app).post("/api/tags").send({ name: "x".repeat(101) });
+      expect(res.status).toBe(400);
+    });
+
+    it("trims name whitespace", async () => {
+      const res = await request(app).post("/api/tags").send({ name: "  trimmed  " });
+      expect(res.status).toBe(201);
+      expect(res.body.name).toBe("trimmed");
+    });
+  });
+
   describe("DELETE /api/tags/:id", () => {
     it("deletes a tag", async () => {
       const tag = await prisma.tag.create({ data: { name: "delete-me" } });

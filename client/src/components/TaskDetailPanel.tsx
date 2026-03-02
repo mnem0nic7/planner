@@ -16,36 +16,49 @@ export function TaskDetailPanel({ task, onClose, onUpdate }: TaskDetailPanelProp
   const [priority, setPriority] = useState<Priority>(task.priority);
   const [dueDate, setDueDate] = useState(task.dueDate?.split("T")[0] || "");
   const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    tagsApi.list().then(setAllTags);
+    tagsApi.list().then(setAllTags).catch(() => { /* tags load is non-critical */ });
   }, []);
 
   const handleSave = async () => {
-    await tasksApi.update(task.id, {
-      title,
-      description: description || undefined,
-      priority,
-      dueDate: dueDate || undefined,
-    });
-    onUpdate();
+    try {
+      await tasksApi.update(task.id, {
+        title,
+        description: description || undefined,
+        priority,
+        dueDate: dueDate || undefined,
+      });
+      onUpdate();
+    } catch {
+      setError("Failed to save changes");
+    }
   };
 
   const handleDelete = async () => {
     if (!confirm("Delete this task?")) return;
-    await tasksApi.delete(task.id);
-    onUpdate();
-    onClose();
+    try {
+      await tasksApi.delete(task.id);
+      onUpdate();
+      onClose();
+    } catch {
+      setError("Failed to delete task");
+    }
   };
 
   const handleToggleTag = async (tag: Tag) => {
-    const hasTag = task.tags.some((t) => t.tagId === tag.id);
-    if (hasTag) {
-      await tasksApi.removeTag(task.id, tag.id);
-    } else {
-      await tasksApi.addTag(task.id, tag.id);
+    try {
+      const hasTag = task.tags.some((t) => t.tagId === tag.id);
+      if (hasTag) {
+        await tasksApi.removeTag(task.id, tag.id);
+      } else {
+        await tasksApi.addTag(task.id, tag.id);
+      }
+      onUpdate();
+    } catch {
+      setError("Failed to update tag");
     }
-    onUpdate();
   };
 
   return (
@@ -55,6 +68,12 @@ export function TaskDetailPanel({ task, onClose, onUpdate }: TaskDetailPanelProp
           <h3 className="text-lg font-semibold">Task Details</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
         </div>
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded flex justify-between items-center">
+            {error}
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">&times;</button>
+          </div>
+        )}
 
         <div className="space-y-4">
           <div>

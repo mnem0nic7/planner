@@ -4,6 +4,8 @@ import { prisma } from "../db.js";
 const router = Router();
 
 const VALID_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
+const MAX_TITLE_LENGTH = 500;
+const MAX_DESCRIPTION_LENGTH = 10000;
 
 function isValidDate(value: string): boolean {
   const d = new Date(value);
@@ -47,8 +49,20 @@ router.get("/projects/:id/tasks", async (req, res) => {
 // POST /api/projects/:id/tasks
 router.post("/projects/:id/tasks", async (req, res) => {
   const { title, description, priority, dueDate } = req.body;
-  if (!title || typeof title !== "string") {
+  if (!title || typeof title !== "string" || !title.trim()) {
     res.status(400).json({ error: "Title is required" });
+    return;
+  }
+  if (title.length > MAX_TITLE_LENGTH) {
+    res.status(400).json({ error: `Title must be under ${MAX_TITLE_LENGTH} characters` });
+    return;
+  }
+  if (description !== undefined && description !== null && typeof description !== "string") {
+    res.status(400).json({ error: "Description must be a string" });
+    return;
+  }
+  if (typeof description === "string" && description.length > MAX_DESCRIPTION_LENGTH) {
+    res.status(400).json({ error: `Description must be under ${MAX_DESCRIPTION_LENGTH} characters` });
     return;
   }
   if (priority && !VALID_PRIORITIES.includes(priority)) {
@@ -75,7 +89,7 @@ router.post("/projects/:id/tasks", async (req, res) => {
 
   const task = await prisma.task.create({
     data: {
-      title,
+      title: title.trim(),
       description: description || null,
       priority: priority || "MEDIUM",
       dueDate: dueDate ? new Date(dueDate) : null,
@@ -144,6 +158,22 @@ router.patch("/tasks/:id/complete", async (req, res) => {
 // PATCH /api/tasks/:id
 router.patch("/tasks/:id", async (req, res) => {
   const { title, description, priority, dueDate } = req.body;
+  if (title !== undefined && (typeof title !== "string" || !title.trim())) {
+    res.status(400).json({ error: "Title must be a non-empty string" });
+    return;
+  }
+  if (typeof title === "string" && title.length > MAX_TITLE_LENGTH) {
+    res.status(400).json({ error: `Title must be under ${MAX_TITLE_LENGTH} characters` });
+    return;
+  }
+  if (description !== undefined && description !== null && typeof description !== "string") {
+    res.status(400).json({ error: "Description must be a string" });
+    return;
+  }
+  if (typeof description === "string" && description.length > MAX_DESCRIPTION_LENGTH) {
+    res.status(400).json({ error: `Description must be under ${MAX_DESCRIPTION_LENGTH} characters` });
+    return;
+  }
   if (priority !== undefined && !VALID_PRIORITIES.includes(priority)) {
     res.status(400).json({ error: `Priority must be one of: ${VALID_PRIORITIES.join(", ")}` });
     return;
@@ -162,7 +192,7 @@ router.patch("/tasks/:id", async (req, res) => {
   const task = await prisma.task.update({
     where: { id: req.params.id },
     data: {
-      ...(title !== undefined && { title }),
+      ...(title !== undefined && { title: (title as string).trim() }),
       ...(description !== undefined && { description }),
       ...(priority !== undefined && { priority }),
       ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
@@ -188,6 +218,17 @@ router.post("/tasks/:id/tags", async (req, res) => {
   const { tagId } = req.body;
   if (!tagId || typeof tagId !== "string") {
     res.status(400).json({ error: "tagId is required" });
+    return;
+  }
+
+  const task = await prisma.task.findUnique({ where: { id: req.params.id } });
+  if (!task) {
+    res.status(404).json({ error: "Task not found" });
+    return;
+  }
+  const tag = await prisma.tag.findUnique({ where: { id: tagId } });
+  if (!tag) {
+    res.status(404).json({ error: "Tag not found" });
     return;
   }
 

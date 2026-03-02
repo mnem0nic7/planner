@@ -4,6 +4,8 @@ import { prisma } from "../db.js";
 const router = Router();
 
 const COLOR_REGEX = /^#[0-9a-fA-F]{3,8}$/;
+const MAX_NAME_LENGTH = 200;
+const MAX_DESCRIPTION_LENGTH = 2000;
 
 function isValidColor(color: unknown): boolean {
   return typeof color === "string" && COLOR_REGEX.test(color);
@@ -21,8 +23,20 @@ router.get("/", async (_req, res) => {
 // POST /api/projects
 router.post("/", async (req, res) => {
   const { name, description, color } = req.body;
-  if (!name || typeof name !== "string") {
+  if (!name || typeof name !== "string" || !name.trim()) {
     res.status(400).json({ error: "Name is required" });
+    return;
+  }
+  if (name.length > MAX_NAME_LENGTH) {
+    res.status(400).json({ error: `Name must be under ${MAX_NAME_LENGTH} characters` });
+    return;
+  }
+  if (description !== undefined && description !== null && typeof description !== "string") {
+    res.status(400).json({ error: "Description must be a string" });
+    return;
+  }
+  if (typeof description === "string" && description.length > MAX_DESCRIPTION_LENGTH) {
+    res.status(400).json({ error: `Description must be under ${MAX_DESCRIPTION_LENGTH} characters` });
     return;
   }
   if (color !== undefined && color !== null && !isValidColor(color)) {
@@ -30,7 +44,7 @@ router.post("/", async (req, res) => {
     return;
   }
   const project = await prisma.project.create({
-    data: { name, description: description || null, color: color || null },
+    data: { name: name.trim(), description: description || null, color: color || null },
   });
   res.status(201).json(project);
 });
@@ -56,6 +70,22 @@ router.get("/:id", async (req, res) => {
 // PATCH /api/projects/:id
 router.patch("/:id", async (req, res) => {
   const { name, description, color } = req.body;
+  if (name !== undefined && (typeof name !== "string" || !name.trim())) {
+    res.status(400).json({ error: "Name must be a non-empty string" });
+    return;
+  }
+  if (typeof name === "string" && name.length > MAX_NAME_LENGTH) {
+    res.status(400).json({ error: `Name must be under ${MAX_NAME_LENGTH} characters` });
+    return;
+  }
+  if (description !== undefined && description !== null && typeof description !== "string") {
+    res.status(400).json({ error: "Description must be a string" });
+    return;
+  }
+  if (typeof description === "string" && description.length > MAX_DESCRIPTION_LENGTH) {
+    res.status(400).json({ error: `Description must be under ${MAX_DESCRIPTION_LENGTH} characters` });
+    return;
+  }
   if (color !== undefined && color !== null && !isValidColor(color)) {
     res.status(400).json({ error: "Color must be a valid hex color (e.g. #FF5733)" });
     return;
@@ -70,7 +100,7 @@ router.patch("/:id", async (req, res) => {
   const project = await prisma.project.update({
     where: { id: req.params.id },
     data: {
-      ...(name !== undefined && { name }),
+      ...(name !== undefined && { name: (name as string).trim() }),
       ...(description !== undefined && { description }),
       ...(color !== undefined && { color }),
     },

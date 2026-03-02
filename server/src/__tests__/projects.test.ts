@@ -68,6 +68,34 @@ describe("Projects API", () => {
     });
   });
 
+  describe("POST /api/projects validation", () => {
+    it("rejects whitespace-only name", async () => {
+      const res = await request(app).post("/api/projects").send({ name: "   " });
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects non-string name", async () => {
+      const res = await request(app).post("/api/projects").send({ name: 123 });
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects oversized name", async () => {
+      const res = await request(app).post("/api/projects").send({ name: "x".repeat(201) });
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects oversized description", async () => {
+      const res = await request(app).post("/api/projects").send({ name: "OK", description: "x".repeat(2001) });
+      expect(res.status).toBe(400);
+    });
+
+    it("trims name whitespace", async () => {
+      const res = await request(app).post("/api/projects").send({ name: "  My Project  " });
+      expect(res.status).toBe(201);
+      expect(res.body.name).toBe("My Project");
+    });
+  });
+
   describe("DELETE /api/projects/:id", () => {
     it("deletes a project and its tasks", async () => {
       const project = await prisma.project.create({

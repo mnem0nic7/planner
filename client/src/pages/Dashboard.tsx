@@ -11,20 +11,31 @@ interface DashboardProps {
 export function Dashboard({ onSelectProject }: DashboardProps) {
   const [projectList, setProjectList] = useState<Project[]>([]);
   const [showCreate, setShowCreate] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadProjects = () => {
-    projectsApi.list().then(setProjectList);
+    projectsApi.list().then(setProjectList).catch(() => setError("Failed to load projects"));
   };
 
   useEffect(() => { loadProjects(); }, []);
 
   const handleCreate = async (data: { name: string; description?: string; color?: string }) => {
-    await projectsApi.create(data);
-    loadProjects();
+    try {
+      await projectsApi.create(data);
+      loadProjects();
+    } catch {
+      setError("Failed to create project");
+    }
   };
 
   return (
     <div className="p-8">
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded flex justify-between items-center">
+          {error}
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">&times;</button>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
         <button

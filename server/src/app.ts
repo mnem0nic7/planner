@@ -10,10 +10,11 @@ import { chatRoutes } from "./routes/chat.js";
 
 const app = express();
 
-// CORS: restrict to same-origin in production, allow dev server in development
+// CORS: in production, allow same-origin only; in dev, also allow Vite dev server
+const port = process.env.PORT || 3001;
 const allowedOrigins = process.env.NODE_ENV === "production"
-  ? []
-  : ["http://localhost:5173"];
+  ? [`http://localhost:${port}`]
+  : ["http://localhost:5173", `http://localhost:${port}`];
 app.use(cors({
   origin: (origin, callback) => {
     // Allow same-origin requests (no origin header) and allowed origins

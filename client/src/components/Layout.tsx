@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 
 interface LayoutProps {
@@ -7,9 +7,10 @@ interface LayoutProps {
   activeView: "dashboard" | "project" | "all-tasks" | "due-soon";
   onSelectProject: (id: string) => void;
   onSelectView: (view: "dashboard" | "all-tasks" | "due-soon") => void;
+  chatOpen?: boolean;
 }
 
-export function Layout({ children, activeProjectId, activeView, onSelectProject, onSelectView }: LayoutProps) {
+export function Layout({ children, activeProjectId, activeView, onSelectProject, onSelectView, chatOpen }: LayoutProps) {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar
@@ -18,7 +19,10 @@ export function Layout({ children, activeProjectId, activeView, onSelectProject,
         onSelectProject={onSelectProject}
         onSelectView={onSelectView}
       />
-      <main className="flex-1 overflow-y-auto">
+      <main
+        className="flex-1 overflow-y-auto transition-[margin] duration-300"
+        style={{ marginRight: chatOpen ? 480 : 0 }}
+      >
         {children}
       </main>
     </div>

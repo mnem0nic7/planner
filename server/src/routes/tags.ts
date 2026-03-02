@@ -3,6 +3,8 @@ import { prisma } from "../db.js";
 
 const router = Router();
 
+const COLOR_REGEX = /^#[0-9a-fA-F]{3,8}$/;
+
 // GET /api/tags
 router.get("/", async (_req, res) => {
   const tags = await prisma.tag.findMany({ orderBy: { name: "asc" } });
@@ -17,13 +19,18 @@ router.post("/", async (req, res) => {
     return;
   }
 
+  if (color !== undefined && color !== null && (typeof color !== "string" || !COLOR_REGEX.test(color))) {
+    res.status(400).json({ error: "Color must be a valid hex color (e.g. #FF5733)" });
+    return;
+  }
+
   const existing = await prisma.tag.findUnique({ where: { name } });
   if (existing) {
     res.status(409).json({ error: "Tag already exists" });
     return;
   }
 
-  const tag = await prisma.tag.create({ data: { name, color } });
+  const tag = await prisma.tag.create({ data: { name, color: color || null } });
   res.status(201).json(tag);
 });
 

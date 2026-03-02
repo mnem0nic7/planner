@@ -78,7 +78,7 @@ chown -R app:app /app/data
 # Run migrations
 npx prisma db push --schema=server/prisma/schema.prisma --skip-generate
 # Drop to non-root user for the application
-exec su -s /bin/sh app -c "node server/dist/index.js"
+exec su -s /bin/sh app -c "exec node server/dist/index.js"
 ENTRYPOINT
 
 CMD ["/app/entrypoint.sh"]

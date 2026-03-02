@@ -126,6 +126,23 @@ describe("Tasks API", () => {
     });
   });
 
+  describe("PATCH /api/tasks/reorder error handling", () => {
+    it("returns 404 when a task ID is invalid", async () => {
+      const t1 = await prisma.task.create({
+        data: { title: "A", projectId, sortOrder: 0 },
+      });
+      const res = await request(app)
+        .patch("/api/tasks/reorder")
+        .send({
+          items: [
+            { id: t1.id, sortOrder: 1 },
+            { id: "nonexistent", sortOrder: 0 },
+          ],
+        });
+      expect(res.status).toBe(404);
+    });
+  });
+
   describe("DELETE /api/tasks/:id", () => {
     it("deletes a task", async () => {
       const task = await prisma.task.create({

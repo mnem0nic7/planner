@@ -100,14 +100,23 @@ router.patch("/tasks/reorder", async (req, res) => {
       return;
     }
   }
-  await prisma.$transaction(
-    items.map((item: { id: string; sortOrder: number }) =>
-      prisma.task.update({
-        where: { id: item.id },
-        data: { sortOrder: item.sortOrder },
-      })
-    )
-  );
+  try {
+    await prisma.$transaction(
+      items.map((item: { id: string; sortOrder: number }) =>
+        prisma.task.update({
+          where: { id: item.id },
+          data: { sortOrder: item.sortOrder },
+        })
+      )
+    );
+  } catch (err: unknown) {
+    const prismaError = err as { code?: string };
+    if (prismaError.code === "P2025") {
+      res.status(404).json({ error: "One or more task IDs not found" });
+      return;
+    }
+    throw err;
+  }
   res.json({ success: true });
 });
 

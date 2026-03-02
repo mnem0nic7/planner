@@ -23,6 +23,13 @@ describe("Tags API", () => {
       expect(res.body.name).toBe("urgent");
     });
 
+    it("rejects invalid color", async () => {
+      const res = await request(app)
+        .post("/api/tags")
+        .send({ name: "bad-color", color: "not-a-color" });
+      expect(res.status).toBe(400);
+    });
+
     it("rejects duplicate tag name", async () => {
       await prisma.tag.create({ data: { name: "dupe" } });
       const res = await request(app)

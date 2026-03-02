@@ -59,7 +59,7 @@ router.post("/chat", async (req, res) => {
 
   // Track client disconnect to abort in-flight AI calls
   const abortSignal = { aborted: false };
-  res.on("close", () => {
+  res.once("close", () => {
     if (!res.writableFinished) {
       abortSignal.aborted = true;
     }
@@ -80,9 +80,11 @@ router.post("/chat", async (req, res) => {
     });
   }
 
-  // Rebuild OpenAI message history from DB
+  // Rebuild OpenAI message history from DB (limit to last 50 messages to avoid token overflow)
+  const MAX_HISTORY_MESSAGES = 50;
+  const recentMessages = conversation.messages.slice(-MAX_HISTORY_MESSAGES);
   const history: ChatCompletionMessageParam[] = [];
-  for (const m of conversation.messages) {
+  for (const m of recentMessages) {
     if (m.role === "tool") {
       history.push({
         role: "tool" as const,

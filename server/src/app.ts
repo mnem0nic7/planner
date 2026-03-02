@@ -3,12 +3,18 @@ import { fileURLToPath } from "url";
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import { projectRoutes } from "./routes/projects.js";
 import { taskRoutes } from "./routes/tasks.js";
 import { tagRoutes } from "./routes/tags.js";
 import { chatRoutes } from "./routes/chat.js";
 
 const app = express();
+
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: false, // CSP handled by Vite in dev, static files in prod
+}));
 
 // CORS: in production, allow same-origin only; in dev, also allow Vite dev server
 const port = process.env.PORT || 3001;

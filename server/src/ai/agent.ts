@@ -54,7 +54,6 @@ export async function streamChat(
 
     let contentAccumulator = "";
     const toolCallAccumulators: Map<number, { id: string; name: string; arguments: string }> = new Map();
-
     for await (const chunk of stream) {
       if (abortSignal?.aborted) break;
 

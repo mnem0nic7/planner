@@ -59,7 +59,11 @@ router.post("/chat", async (req, res) => {
 
   // Track client disconnect to abort in-flight AI calls
   const abortSignal = { aborted: false };
-  req.on("close", () => { abortSignal.aborted = true; });
+  res.on("close", () => {
+    if (!res.writableFinished) {
+      abortSignal.aborted = true;
+    }
+  });
 
   // Get or create conversation
   let conversation;
@@ -141,6 +145,7 @@ router.post("/chat", async (req, res) => {
     }
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : "Unknown error";
+    console.error("Chat error:", errMsg);
     if (!abortSignal.aborted) {
       res.write(`event: error\ndata: ${JSON.stringify({ message: errMsg })}\n\n`);
     }

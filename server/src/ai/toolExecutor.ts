@@ -142,12 +142,13 @@ export async function executeTool(
     }
 
     case "add_tag_to_task": {
-      return prisma.taskTag.create({
-        data: {
-          taskId: args.taskId as string,
-          tagId: args.tagId as string,
-        },
+      const taskId = args.taskId as string;
+      const tagId = args.tagId as string;
+      const existingLink = await prisma.taskTag.findUnique({
+        where: { taskId_tagId: { taskId, tagId } },
       });
+      if (existingLink) return { alreadyExists: true };
+      return prisma.taskTag.create({ data: { taskId, tagId } });
     }
 
     case "remove_tag_from_task": {

@@ -173,7 +173,13 @@ export function ChatPanel({ open, onClose, onDataChange }: ChatPanelProps) {
           if (line.startsWith("event: ")) {
             eventType = line.slice(7);
           } else if (line.startsWith("data: ")) {
-            const data = JSON.parse(line.slice(6));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let data: any;
+            try {
+              data = JSON.parse(line.slice(6));
+            } catch {
+              continue;
+            }
             switch (eventType) {
               case "content":
                 fullContent += data.delta;

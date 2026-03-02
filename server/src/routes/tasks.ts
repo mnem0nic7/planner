@@ -60,6 +60,12 @@ router.post("/projects/:id/tasks", async (req, res) => {
     return;
   }
 
+  const project = await prisma.project.findUnique({ where: { id: req.params.id } });
+  if (!project) {
+    res.status(404).json({ error: "Project not found" });
+    return;
+  }
+
   // Auto-set sortOrder to end of list
   const maxSort = await prisma.task.aggregate({
     where: { projectId: req.params.id },
@@ -175,6 +181,15 @@ router.post("/tasks/:id/tags", async (req, res) => {
     res.status(400).json({ error: "tagId is required" });
     return;
   }
+
+  const existing = await prisma.taskTag.findUnique({
+    where: { taskId_tagId: { taskId: req.params.id, tagId } },
+  });
+  if (existing) {
+    res.status(409).json({ error: "Tag already on task" });
+    return;
+  }
+
   await prisma.taskTag.create({
     data: { taskId: req.params.id, tagId },
   });

@@ -29,6 +29,11 @@ router.post("/", async (req, res) => {
 
 // DELETE /api/tags/:id
 router.delete("/:id", async (req, res) => {
+  const existing = await prisma.tag.findUnique({ where: { id: req.params.id } });
+  if (!existing) {
+    res.status(404).json({ error: "Tag not found" });
+    return;
+  }
   await prisma.tag.delete({ where: { id: req.params.id } });
   res.status(204).send();
 });

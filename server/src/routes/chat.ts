@@ -3,6 +3,8 @@ import { prisma } from "../db.js";
 import { streamChat } from "../ai/agent.js";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
+const MAX_MESSAGE_LENGTH = 2000;
+
 const router = Router();
 
 // GET /api/conversations
@@ -40,10 +42,19 @@ router.post("/chat", async (req, res) => {
     message: string;
   };
 
-  if (!message) {
+  if (!message || typeof message !== "string") {
     res.status(400).json({ error: "Message is required" });
     return;
   }
+
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    res.status(400).json({ error: `Message must be under ${MAX_MESSAGE_LENGTH} characters` });
+    return;
+  }
+
+  // Track client disconnect to abort in-flight AI calls
+  const abortSignal = { aborted: false };
+  req.on("close", () => { abortSignal.aborted = true; });
 
   // Get or create conversation
   let conversation;
@@ -61,26 +72,34 @@ router.post("/chat", async (req, res) => {
   }
 
   // Rebuild OpenAI message history from DB
-  const history: ChatCompletionMessageParam[] = conversation.messages.map((m) => {
+  const history: ChatCompletionMessageParam[] = [];
+  for (const m of conversation.messages) {
     if (m.role === "tool") {
-      return {
+      history.push({
         role: "tool" as const,
         tool_call_id: m.toolCallId!,
         content: m.content || "",
-      };
-    }
-    if (m.role === "assistant" && m.toolCalls) {
-      return {
+      });
+    } else if (m.role === "assistant" && m.toolCalls) {
+      let toolCalls;
+      try {
+        toolCalls = JSON.parse(m.toolCalls);
+      } catch {
+        continue; // Skip malformed tool call records
+      }
+      history.push({
         role: "assistant" as const,
         content: m.content || null,
-        tool_calls: JSON.parse(m.toolCalls),
-      };
+        tool_calls: toolCalls,
+      });
+    } else if (m.role === "user" || m.role === "assistant") {
+      history.push({
+        role: m.role as "user" | "assistant",
+        content: m.content || "",
+      });
     }
-    return {
-      role: m.role as "user" | "assistant",
-      content: m.content || "",
-    };
-  });
+    // Skip messages with unknown roles
+  }
 
   // Set up SSE
   res.setHeader("Content-Type", "text/event-stream");
@@ -89,9 +108,9 @@ router.post("/chat", async (req, res) => {
   res.flushHeaders();
 
   try {
-    const newMessages = await streamChat(res, history, message);
+    const newMessages = await streamChat(res, history, message, abortSignal);
 
-    // Save all new messages to DB
+    // Save all new messages to DB (even if client disconnected, so conversation state is consistent)
     for (const msg of newMessages) {
       await prisma.message.create({
         data: {
@@ -112,10 +131,14 @@ router.post("/chat", async (req, res) => {
       data: { updatedAt: new Date() },
     });
 
-    res.write(`event: done\ndata: ${JSON.stringify({ conversationId: conversation.id })}\n\n`);
+    if (!abortSignal.aborted) {
+      res.write(`event: done\ndata: ${JSON.stringify({ conversationId: conversation.id })}\n\n`);
+    }
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : "Unknown error";
-    res.write(`event: error\ndata: ${JSON.stringify({ message: errMsg })}\n\n`);
+    if (!abortSignal.aborted) {
+      res.write(`event: error\ndata: ${JSON.stringify({ message: errMsg })}\n\n`);
+    }
   }
 
   res.end();

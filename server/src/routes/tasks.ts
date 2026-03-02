@@ -3,6 +3,13 @@ import { prisma } from "../db.js";
 
 const router = Router();
 
+const VALID_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
+
+function isValidDate(value: string): boolean {
+  const d = new Date(value);
+  return !isNaN(d.getTime());
+}
+
 // GET /api/tasks (all tasks across projects)
 router.get("/tasks", async (_req, res) => {
   const tasks = await prisma.task.findMany({
@@ -40,8 +47,16 @@ router.get("/projects/:id/tasks", async (req, res) => {
 // POST /api/projects/:id/tasks
 router.post("/projects/:id/tasks", async (req, res) => {
   const { title, description, priority, dueDate } = req.body;
-  if (!title) {
+  if (!title || typeof title !== "string") {
     res.status(400).json({ error: "Title is required" });
+    return;
+  }
+  if (priority && !VALID_PRIORITIES.includes(priority)) {
+    res.status(400).json({ error: `Priority must be one of: ${VALID_PRIORITIES.join(", ")}` });
+    return;
+  }
+  if (dueDate && !isValidDate(dueDate)) {
+    res.status(400).json({ error: "Invalid due date" });
     return;
   }
 
@@ -55,7 +70,7 @@ router.post("/projects/:id/tasks", async (req, res) => {
   const task = await prisma.task.create({
     data: {
       title,
-      description,
+      description: description || null,
       priority: priority || "MEDIUM",
       dueDate: dueDate ? new Date(dueDate) : null,
       sortOrder,
@@ -68,9 +83,19 @@ router.post("/projects/:id/tasks", async (req, res) => {
 
 // PATCH /api/tasks/reorder — MUST be before /tasks/:id to avoid "reorder" matching as :id
 router.patch("/tasks/reorder", async (req, res) => {
-  const { items } = req.body as { items: { id: string; sortOrder: number }[] };
+  const { items } = req.body;
+  if (!Array.isArray(items) || items.length === 0) {
+    res.status(400).json({ error: "Items array is required" });
+    return;
+  }
+  for (const item of items) {
+    if (!item || typeof item.id !== "string" || typeof item.sortOrder !== "number") {
+      res.status(400).json({ error: "Each item must have an id (string) and sortOrder (number)" });
+      return;
+    }
+  }
   await prisma.$transaction(
-    items.map((item) =>
+    items.map((item: { id: string; sortOrder: number }) =>
       prisma.task.update({
         where: { id: item.id },
         data: { sortOrder: item.sortOrder },
@@ -104,6 +129,21 @@ router.patch("/tasks/:id/complete", async (req, res) => {
 // PATCH /api/tasks/:id
 router.patch("/tasks/:id", async (req, res) => {
   const { title, description, priority, dueDate } = req.body;
+  if (priority !== undefined && !VALID_PRIORITIES.includes(priority)) {
+    res.status(400).json({ error: `Priority must be one of: ${VALID_PRIORITIES.join(", ")}` });
+    return;
+  }
+  if (dueDate !== undefined && dueDate !== null && !isValidDate(dueDate)) {
+    res.status(400).json({ error: "Invalid due date" });
+    return;
+  }
+
+  const existing = await prisma.task.findUnique({ where: { id: req.params.id } });
+  if (!existing) {
+    res.status(404).json({ error: "Task not found" });
+    return;
+  }
+
   const task = await prisma.task.update({
     where: { id: req.params.id },
     data: {
@@ -119,6 +159,11 @@ router.patch("/tasks/:id", async (req, res) => {
 
 // DELETE /api/tasks/:id
 router.delete("/tasks/:id", async (req, res) => {
+  const existing = await prisma.task.findUnique({ where: { id: req.params.id } });
+  if (!existing) {
+    res.status(404).json({ error: "Task not found" });
+    return;
+  }
   await prisma.task.delete({ where: { id: req.params.id } });
   res.status(204).send();
 });
@@ -126,6 +171,10 @@ router.delete("/tasks/:id", async (req, res) => {
 // POST /api/tasks/:id/tags
 router.post("/tasks/:id/tags", async (req, res) => {
   const { tagId } = req.body;
+  if (!tagId || typeof tagId !== "string") {
+    res.status(400).json({ error: "tagId is required" });
+    return;
+  }
   await prisma.taskTag.create({
     data: { taskId: req.params.id, tagId },
   });

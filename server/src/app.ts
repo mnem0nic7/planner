@@ -1,6 +1,7 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import express from "express";
+import type { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { projectRoutes } from "./routes/projects.js";
 import { taskRoutes } from "./routes/tasks.js";
@@ -9,8 +10,23 @@ import { chatRoutes } from "./routes/chat.js";
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+// CORS: restrict to same-origin in production, allow dev server in development
+const allowedOrigins = process.env.NODE_ENV === "production"
+  ? []
+  : ["http://localhost:5173"];
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow same-origin requests (no origin header) and allowed origins
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+}));
+
+// Body size limit: 50KB is generous for JSON payloads
+app.use(express.json({ limit: "50kb" }));
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
@@ -33,5 +49,13 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.join(clientDist, "index.html"));
   });
 }
+
+// Global error handler — never leak stack traces to clients
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error("Unhandled error:", err.message);
+  if (!res.headersSent) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 export { app };

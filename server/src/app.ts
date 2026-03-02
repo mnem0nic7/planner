@@ -4,6 +4,7 @@ import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { projectRoutes } from "./routes/projects.js";
 import { taskRoutes } from "./routes/tasks.js";
 import { tagRoutes } from "./routes/tags.js";
@@ -13,8 +14,26 @@ const app = express();
 
 // Security headers
 app.use(helmet({
-  contentSecurityPolicy: false, // CSP handled by Vite in dev, static files in prod
+  contentSecurityPolicy: process.env.NODE_ENV === "production" ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      connectSrc: ["'self'"],
+      imgSrc: ["'self'", "data:"],
+    },
+  } : false,
 }));
+
+// Rate limit the AI chat endpoint to prevent runaway API costs
+const chatLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30,
+  message: { error: "Too many requests, please try again later" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use("/api/chat", chatLimiter);
 
 // CORS: in production, allow same-origin only; in dev, also allow Vite dev server
 const port = process.env.PORT || 3001;
@@ -49,10 +68,12 @@ if (process.env.NODE_ENV === "production") {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const clientDist = path.resolve(__dirname, "../../client/dist");
 
-  app.use(express.static(clientDist));
+  // Cache hashed assets for 1 year; index.html always fetched fresh
+  app.use(express.static(clientDist, { maxAge: "1y", index: false }));
 
-  // SPA fallback: serve index.html for non-API routes
+  // SPA fallback: serve index.html for non-API routes (no cache)
   app.get("/{*path}", (_req, res) => {
+    res.setHeader("Cache-Control", "no-cache");
     res.sendFile(path.join(clientDist, "index.html"));
   });
 }

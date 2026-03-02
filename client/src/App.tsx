@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, Component } from "react";
+import type { ReactNode, ErrorInfo } from "react";
 import { Layout } from "./components/Layout";
 import { Dashboard } from "./pages/Dashboard";
 import { ProjectView } from "./pages/ProjectView";
@@ -8,6 +9,33 @@ import { ChatPanel } from "./components/ChatPanel";
 import { ChatBubble } from "./components/ChatBubble";
 
 type View = "dashboard" | "project" | "all-tasks" | "due-soon";
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("Uncaught render error:", error, info);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center p-8">
+            <h1 className="text-xl font-semibold text-gray-900 mb-2">Something went wrong</h1>
+            <p className="text-gray-500 mb-4">{this.state.error.message}</p>
+            <button
+              onClick={() => this.setState({ error: null })}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function App() {
   const [view, setView] = useState<View>("dashboard");
@@ -30,7 +58,7 @@ function App() {
   }, []);
 
   return (
-    <>
+    <ErrorBoundary>
       <Layout
         activeProjectId={activeProjectId}
         activeView={view}
@@ -54,7 +82,7 @@ function App() {
       ) : (
         <ChatBubble onClick={() => setChatOpen(true)} />
       )}
-    </>
+    </ErrorBoundary>
   );
 }
 

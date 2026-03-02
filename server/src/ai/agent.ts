@@ -5,6 +5,7 @@ import { tools } from "./tools.js";
 import { executeTool } from "./toolExecutor.js";
 
 const MAX_TOOL_ITERATIONS = 10;
+const MAX_TOOLS_PER_ROUND = 5;
 
 const openai = new OpenAI();
 
@@ -90,7 +91,8 @@ export async function streamChat(
       messages.push(assistantMsg);
       newMessages.push(assistantMsg);
 
-      for (const tc of toolCallAccumulators.values()) {
+      const toolCalls = [...toolCallAccumulators.values()].slice(0, MAX_TOOLS_PER_ROUND);
+      for (const tc of toolCalls) {
         if (abortSignal?.aborted) break;
 
         let args: Record<string, unknown>;

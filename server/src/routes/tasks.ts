@@ -7,9 +7,9 @@ const VALID_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 const MAX_TITLE_LENGTH = 500;
 const MAX_DESCRIPTION_LENGTH = 10000;
 
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]+)?$/;
 function isValidDate(value: string): boolean {
-  const d = new Date(value);
-  return !isNaN(d.getTime());
+  return typeof value === "string" && ISO_DATE_RE.test(value) && !isNaN(new Date(value).getTime());
 }
 
 // GET /api/tasks (all tasks across projects)
@@ -109,8 +109,9 @@ router.patch("/tasks/reorder", async (req, res) => {
     return;
   }
   for (const item of items) {
-    if (!item || typeof item.id !== "string" || typeof item.sortOrder !== "number") {
-      res.status(400).json({ error: "Each item must have an id (string) and sortOrder (number)" });
+    if (!item || typeof item.id !== "string" || typeof item.sortOrder !== "number"
+        || !Number.isInteger(item.sortOrder) || item.sortOrder < 0) {
+      res.status(400).json({ error: "Each item must have an id (string) and sortOrder (non-negative integer)" });
       return;
     }
   }

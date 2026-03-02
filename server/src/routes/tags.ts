@@ -3,7 +3,7 @@ import { prisma } from "../db.js";
 
 const router = Router();
 
-const COLOR_REGEX = /^#[0-9a-fA-F]{3,8}$/;
+const COLOR_REGEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 const MAX_NAME_LENGTH = 100;
 
 // GET /api/tags

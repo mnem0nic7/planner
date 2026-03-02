@@ -146,10 +146,9 @@ router.post("/chat", async (req, res) => {
       res.write(`event: done\ndata: ${JSON.stringify({ conversationId: conversation.id })}\n\n`);
     }
   } catch (error) {
-    const errMsg = error instanceof Error ? error.message : "Unknown error";
-    console.error("Chat error:", errMsg);
+    console.error("Chat error:", error instanceof Error ? error.message : error);
     if (!abortSignal.aborted) {
-      res.write(`event: error\ndata: ${JSON.stringify({ message: errMsg })}\n\n`);
+      res.write(`event: error\ndata: ${JSON.stringify({ message: "An error occurred. Please try again." })}\n\n`);
     }
   }
 

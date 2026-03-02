@@ -69,16 +69,14 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD node -e "fetch('http://localhost:3001/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
 
-# Entrypoint: run migrations as root (needs volume write), then switch to non-root user
+# Entrypoint: fix volume ownership, run migrations + app as non-root user
 COPY --chmod=755 <<'ENTRYPOINT' /app/entrypoint.sh
 #!/bin/sh
 set -e
 # Fix data directory ownership (volume may be root-owned on first mount)
 chown -R app:app /app/data
-# Run migrations
-npx prisma db push --schema=server/prisma/schema.prisma --skip-generate
-# Drop to non-root user for the application
-exec su -s /bin/sh app -c "exec node server/dist/index.js"
+# Run migrations and start app as non-root user
+exec su -s /bin/sh app -c "npx prisma db push --schema=server/prisma/schema.prisma --skip-generate && exec node server/dist/index.js"
 ENTRYPOINT
 
 CMD ["/app/entrypoint.sh"]

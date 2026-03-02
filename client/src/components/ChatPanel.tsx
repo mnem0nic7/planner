@@ -75,8 +75,10 @@ export function ChatPanel({ open, onClose, onDataChange }: ChatPanelProps) {
   >([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const [error, setError] = useState<string | null>(null);
+
   const loadConversations = () => {
-    chat.conversations().then(setConversations);
+    chat.conversations().then(setConversations).catch(() => setError("Failed to load conversations"));
   };
 
   // Load conversations list on mount
@@ -99,7 +101,7 @@ export function ChatPanel({ open, onClose, onDataChange }: ChatPanelProps) {
         // Skip "tool" messages -- they are shown inline via toolCalls on assistant messages
       }
       setMessages(displayMsgs);
-    });
+    }).catch(() => setError("Failed to load conversation"));
   }, [activeConversationId]);
 
   // Auto-scroll to bottom
@@ -119,12 +121,16 @@ export function ChatPanel({ open, onClose, onDataChange }: ChatPanelProps) {
   }
 
   async function handleDeleteConversation(id: string) {
-    await chat.deleteConversation(id);
-    if (activeConversationId === id) {
-      setActiveConversationId(null);
-      setMessages([]);
+    try {
+      await chat.deleteConversation(id);
+      if (activeConversationId === id) {
+        setActiveConversationId(null);
+        setMessages([]);
+      }
+      loadConversations();
+    } catch {
+      setError("Failed to delete conversation");
     }
-    loadConversations();
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -305,6 +311,14 @@ export function ChatPanel({ open, onClose, onDataChange }: ChatPanelProps) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Error banner */}
+      {error && (
+        <div className="mx-4 mt-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm flex justify-between items-center">
+          {error}
+          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 ml-2">&times;</button>
         </div>
       )}
 

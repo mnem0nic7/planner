@@ -23,6 +23,7 @@ export function TaskDetailPanel({ task, onClose, onUpdate, onRefresh }: TaskDeta
   );
   const [error, setError] = useState<string | null>(null);
   const savingRef = useRef(false);
+  const pendingSaveRef = useRef(false);
   const trapRef = useFocusTrap<HTMLDivElement>();
   // Ref tracks latest form values so async saves always read current data
   const fieldsRef = useRef({ title, description, priority, dueDate });
@@ -41,9 +42,13 @@ export function TaskDetailPanel({ task, onClose, onUpdate, onRefresh }: TaskDeta
     setActiveTagIds(new Set(task.tags.map((t) => t.tagId)));
   }, [task]);
 
-  // Save on blur — reads from ref to avoid stale closure state
+  // Save on blur — reads from ref to avoid stale closure state.
+  // If called while a save is in-flight, queues a re-save so changes aren't lost.
   const handleSave = async () => {
-    if (savingRef.current) return;
+    if (savingRef.current) {
+      pendingSaveRef.current = true;
+      return;
+    }
     savingRef.current = true;
     const { title: t, description: d, priority: p, dueDate: dd } = fieldsRef.current;
     try {
@@ -59,6 +64,10 @@ export function TaskDetailPanel({ task, onClose, onUpdate, onRefresh }: TaskDeta
       setError("Failed to save changes");
     } finally {
       savingRef.current = false;
+      if (pendingSaveRef.current) {
+        pendingSaveRef.current = false;
+        handleSave();
+      }
     }
   };
 

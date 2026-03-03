@@ -20,6 +20,8 @@ export function ProjectView({ projectId }: ProjectViewProps) {
       const p = await projectsApi.get(projectId);
       setProject(p);
       setTaskList(p.tasks || []);
+      // Update selectedTask with fresh data from the reload
+      setSelectedTask((prev) => prev ? (p.tasks || []).find((t: Task) => t.id === prev.id) || null : null);
     } catch {
       setError("Failed to load project");
     }

@@ -25,6 +25,7 @@ export function TagTasks({ tagId, onBack }: TagTasksProps) {
       ]);
       setTag(allTags.find(t => t.id === tagId) || null);
       setTaskList(data);
+      setSelectedTask((prev) => prev ? data.find((t) => t.id === prev.id) || null : null);
     } catch {
       setError("Failed to load tasks");
     } finally {

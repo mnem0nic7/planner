@@ -188,6 +188,8 @@ export function ChatPanel({ open, onClose, onDataChange, activeProjectId }: Chat
       const decoder = new TextDecoder();
       let buffer = "";
       let fullContent = "";
+      // eventType persists across read() boundaries so split event/data pairs work
+      let eventType = "";
 
       while (true) {
         const { done, value } = await reader.read();
@@ -197,7 +199,6 @@ export function ChatPanel({ open, onClose, onDataChange, activeProjectId }: Chat
         const lines = buffer.split("\n");
         buffer = lines.pop() || "";
 
-        let eventType = "";
         for (const line of lines) {
           if (line.startsWith("event: ")) {
             eventType = line.slice(7);

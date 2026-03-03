@@ -14,6 +14,7 @@ export function DueSoon() {
     try {
       const data = await tasksApi.dueSoon();
       setTaskList(data);
+      setSelectedTask((prev) => prev ? data.find((t) => t.id === prev.id) || null : null);
     } catch {
       setError("Failed to load tasks");
     } finally {

@@ -42,9 +42,10 @@ router.delete("/conversations/:id", async (req, res) => {
 
 // POST /api/chat — streaming SSE endpoint
 router.post("/chat", async (req, res) => {
-  const { conversationId, message } = req.body as {
+  const { conversationId, message, activeProjectId } = req.body as {
     conversationId?: string;
     message: string;
+    activeProjectId?: string;
   };
 
   if (!message || typeof message !== "string") {
@@ -78,6 +79,45 @@ router.post("/chat", async (req, res) => {
       data: { title: message.slice(0, 100) },
       include: { messages: true },
     });
+  }
+
+  // Build project context for AI system prompt
+  let projectContext: string | undefined;
+  if (activeProjectId && typeof activeProjectId === "string" && activeProjectId.length < 100) {
+    const project = await prisma.project.findUnique({
+      where: { id: activeProjectId },
+      include: {
+        tasks: {
+          include: { tags: { include: { tag: true } } },
+          orderBy: { sortOrder: "asc" },
+        },
+      },
+    });
+    if (project) {
+      const pending = project.tasks.filter(t => !t.completed).length;
+      const completed = project.tasks.filter(t => t.completed).length;
+      const overdue = project.tasks.filter(t => !t.completed && t.dueDate && t.dueDate < new Date()).length;
+
+      const taskLines = project.tasks.map(t => {
+        const check = t.completed ? "x" : " ";
+        const priority = t.priority !== "MEDIUM" ? ` (${t.priority})` : "";
+        const due = t.dueDate ? `, due ${t.dueDate.toISOString().split("T")[0]}` : "";
+        const tagNames = t.tags.map(tt => tt.tag.name).join(", ");
+        const tags = tagNames ? ` [${tagNames}]` : "";
+        return `- [${check}] ${t.title}${priority}${due}${tags}`;
+      }).join("\n");
+
+      projectContext = `--- Current Project Context ---
+The user is currently viewing project "${project.name}" (ID: ${project.id}).
+Description: ${project.description || "None"}
+Status: ${pending} pending, ${completed} completed, ${overdue} overdue tasks.
+
+Tasks:
+${taskLines || "(no tasks)"}
+
+Default new tasks to this project unless the user specifies otherwise.
+When discussing "this project" or "here", refer to this project.`;
+    }
   }
 
   // Rebuild OpenAI message history from DB (limit to last 50 messages to avoid token overflow)
@@ -119,7 +159,7 @@ router.post("/chat", async (req, res) => {
   res.flushHeaders();
 
   try {
-    const newMessages = await streamChat(res, history, message, abortSignal);
+    const newMessages = await streamChat(res, history, message, abortSignal, projectContext);
 
     // Save all new messages to DB (even if client disconnected, so conversation state is consistent)
     for (const msg of newMessages) {

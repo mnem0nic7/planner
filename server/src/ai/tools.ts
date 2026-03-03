@@ -144,6 +144,10 @@ export const tools: ChatCompletionTool[] = [
             enum: ["asc", "desc"],
             description: "Sort direction. Defaults to desc.",
           },
+          tagId: {
+            type: "string",
+            description: "Filter to tasks that have this specific tag.",
+          },
         },
         required: [],
       },

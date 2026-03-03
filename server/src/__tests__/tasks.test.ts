@@ -482,6 +482,21 @@ describe("Tasks API", () => {
     });
   });
 
+  describe("list_tasks AI tool (tagId filter)", () => {
+    it("filters by tagId via toolExecutor", async () => {
+      const { executeTool } = await import("../ai/toolExecutor.js");
+      const tag = await prisma.tag.create({ data: { name: `aitag-${Date.now()}` } });
+      const project = await prisma.project.create({ data: { name: `aitagproj-${Date.now()}` } });
+      const t1 = await prisma.task.create({ data: { title: "WithTag", projectId: project.id, sortOrder: 0 } });
+      await prisma.task.create({ data: { title: "NoTag", projectId: project.id, sortOrder: 1 } });
+      await prisma.taskTag.create({ data: { taskId: t1.id, tagId: tag.id } });
+
+      const result = await executeTool("list_tasks", { tagId: tag.id }) as unknown[];
+      expect(result.length).toBe(1);
+      expect((result[0] as { title: string }).title).toBe("WithTag");
+    });
+  });
+
   describe("list_tasks AI tool (enhanced)", () => {
     it("filters by dueBefore via toolExecutor", async () => {
       const { executeTool } = await import("../ai/toolExecutor.js");

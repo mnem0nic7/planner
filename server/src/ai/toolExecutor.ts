@@ -118,6 +118,9 @@ export async function executeTool(
       if (args.projectId) where.projectId = args.projectId as string;
       if (args.completed !== undefined) where.completed = args.completed as boolean;
       if (args.priority) where.priority = args.priority as Priority;
+      if (args.tagId && typeof args.tagId === "string") {
+        where.tags = { some: { tagId: args.tagId as string } };
+      }
 
       // Date range filters
       const dueDateFilter: Record<string, Date> = {};

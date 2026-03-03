@@ -66,6 +66,48 @@ describe("Tags API", () => {
     });
   });
 
+  describe("PATCH /api/tags/:id", () => {
+    it("updates tag name", async () => {
+      const tag = await prisma.tag.create({ data: { name: `old-${Date.now()}`, color: "#ff0000" } });
+      const newName = `new-${Date.now()}`;
+      const res = await request(app).patch(`/api/tags/${tag.id}`).send({ name: newName });
+      expect(res.status).toBe(200);
+      expect(res.body.name).toBe(newName);
+      expect(res.body.color).toBe("#ff0000");
+    });
+
+    it("updates tag color", async () => {
+      const tag = await prisma.tag.create({ data: { name: `color-${Date.now()}` } });
+      const res = await request(app).patch(`/api/tags/${tag.id}`).send({ color: "#00ff00" });
+      expect(res.status).toBe(200);
+      expect(res.body.color).toBe("#00ff00");
+    });
+
+    it("returns 404 for non-existent tag", async () => {
+      const res = await request(app).patch("/api/tags/nonexistent").send({ name: "nope" });
+      expect(res.status).toBe(404);
+    });
+
+    it("returns 409 for duplicate name", async () => {
+      const existing = await prisma.tag.create({ data: { name: `dup-${Date.now()}` } });
+      const tag = await prisma.tag.create({ data: { name: `other-${Date.now()}` } });
+      const res = await request(app).patch(`/api/tags/${tag.id}`).send({ name: existing.name });
+      expect(res.status).toBe(409);
+    });
+
+    it("rejects invalid color", async () => {
+      const tag = await prisma.tag.create({ data: { name: `badcolor-${Date.now()}` } });
+      const res = await request(app).patch(`/api/tags/${tag.id}`).send({ color: "not-a-color" });
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects empty name", async () => {
+      const tag = await prisma.tag.create({ data: { name: `emptyname-${Date.now()}` } });
+      const res = await request(app).patch(`/api/tags/${tag.id}`).send({ name: "   " });
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe("DELETE /api/tags/:id", () => {
     it("deletes a tag", async () => {
       const tag = await prisma.tag.create({ data: { name: "delete-me" } });

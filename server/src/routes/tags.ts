@@ -40,6 +40,50 @@ router.post("/", async (req, res) => {
   res.status(201).json(tag);
 });
 
+// PATCH /api/tags/:id
+router.patch("/:id", async (req, res) => {
+  const { name, color } = req.body;
+
+  const existing = await prisma.tag.findUnique({ where: { id: req.params.id } });
+  if (!existing) {
+    res.status(404).json({ error: "Tag not found" });
+    return;
+  }
+
+  if (name !== undefined) {
+    if (typeof name !== "string" || !name.trim()) {
+      res.status(400).json({ error: "Name must be a non-empty string" });
+      return;
+    }
+    if (name.length > MAX_NAME_LENGTH) {
+      res.status(400).json({ error: `Name must be under ${MAX_NAME_LENGTH} characters` });
+      return;
+    }
+    const trimmedName = name.trim();
+    if (trimmedName !== existing.name) {
+      const duplicate = await prisma.tag.findUnique({ where: { name: trimmedName } });
+      if (duplicate) {
+        res.status(409).json({ error: "Tag name already exists" });
+        return;
+      }
+    }
+  }
+
+  if (color !== undefined && color !== null && (typeof color !== "string" || !COLOR_REGEX.test(color))) {
+    res.status(400).json({ error: "Color must be a valid hex color (e.g. #FF5733)" });
+    return;
+  }
+
+  const tag = await prisma.tag.update({
+    where: { id: req.params.id },
+    data: {
+      ...(name !== undefined && { name: (name as string).trim() }),
+      ...(color !== undefined && { color: color || null }),
+    },
+  });
+  res.json(tag);
+});
+
 // DELETE /api/tags/:id
 router.delete("/:id", async (req, res) => {
   const existing = await prisma.tag.findUnique({ where: { id: req.params.id } });

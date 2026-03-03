@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useFocusTrap } from "../lib/useFocusTrap";
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -17,6 +18,7 @@ export function CreateProjectDialog({ open, onClose, onCreate }: CreateProjectDi
   const [description, setDescription] = useState("");
   const [color, setColor] = useState(COLORS[0]);
   const [submitting, setSubmitting] = useState(false);
+  const trapRef = useFocusTrap<HTMLDivElement>();
 
   // Reset form state when dialog opens
   useEffect(() => {
@@ -53,7 +55,7 @@ export function CreateProjectDialog({ open, onClose, onCreate }: CreateProjectDi
       aria-modal="true"
       aria-label="Create new project"
     >
-      <div className="bg-white rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+      <div ref={trapRef} className="bg-white rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-semibold mb-4">New Project</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

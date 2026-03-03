@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { tasks as tasksApi, tags as tagsApi } from "../lib/api";
+import { useFocusTrap } from "../lib/useFocusTrap";
 import type { Task, Tag, Priority } from "../lib/types";
 
 interface TaskDetailPanelProps {
@@ -22,6 +23,10 @@ export function TaskDetailPanel({ task, onClose, onUpdate, onRefresh }: TaskDeta
   );
   const [error, setError] = useState<string | null>(null);
   const savingRef = useRef(false);
+  const trapRef = useFocusTrap<HTMLDivElement>();
+  // Ref tracks latest form values so async saves always read current data
+  const fieldsRef = useRef({ title, description, priority, dueDate });
+  fieldsRef.current = { title, description, priority, dueDate };
 
   useEffect(() => {
     tagsApi.list().then(setAllTags).catch(() => { /* tags load is non-critical */ });
@@ -36,16 +41,18 @@ export function TaskDetailPanel({ task, onClose, onUpdate, onRefresh }: TaskDeta
     setActiveTagIds(new Set(task.tags.map((t) => t.tagId)));
   }, [task]);
 
-  // Save on blur — uses a ref to prevent concurrent saves
+  // Save on blur — reads from ref to avoid stale closure state
   const handleSave = async () => {
     if (savingRef.current) return;
     savingRef.current = true;
+    const { title: t, description: d, priority: p, dueDate: dd } = fieldsRef.current;
     try {
       await tasksApi.update(task.id, {
-        title,
-        description: description || undefined,
-        priority,
-        dueDate: dueDate || undefined,
+        title: t,
+        description: d || undefined,
+        priority: p,
+        // Send null to clear due date; undefined means "don't change"
+        dueDate: dd === "" ? null : (dd || undefined),
       });
       onUpdate();
     } catch {
@@ -104,7 +111,7 @@ export function TaskDetailPanel({ task, onClose, onUpdate, onRefresh }: TaskDeta
       aria-modal="true"
       aria-label="Task details"
     >
-      <div className="w-full max-w-md bg-white h-full overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+      <div ref={trapRef} className="w-full max-w-md bg-white h-full overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold">Task Details</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl" aria-label="Close task details">&times;</button>
@@ -134,9 +141,11 @@ export function TaskDetailPanel({ task, onClose, onUpdate, onRefresh }: TaskDeta
               id="task-priority"
               value={priority}
               onChange={(e) => {
-                setPriority(e.target.value as Priority);
-                // Save immediately for select elements — onChange doesn't always trigger blur
-                setTimeout(handleSave, 0);
+                const newPriority = e.target.value as Priority;
+                setPriority(newPriority);
+                // Update ref immediately so handleSave reads correct value
+                fieldsRef.current = { ...fieldsRef.current, priority: newPriority };
+                handleSave();
               }}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >

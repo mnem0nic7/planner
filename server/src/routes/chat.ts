@@ -36,7 +36,10 @@ router.delete("/conversations/:id", async (req, res) => {
     res.status(404).json({ error: "Conversation not found" });
     return;
   }
-  await prisma.conversation.delete({ where: { id: req.params.id } });
+  await prisma.$transaction([
+    prisma.message.deleteMany({ where: { conversationId: req.params.id } }),
+    prisma.conversation.delete({ where: { id: req.params.id } }),
+  ]);
   res.status(204).send();
 });
 

@@ -4,13 +4,15 @@ import type { Project, Tag } from "../lib/types";
 
 interface SidebarProps {
   activeProjectId: string | null;
-  activeView: "dashboard" | "project" | "all-tasks" | "due-soon";
+  activeView: string;
+  activeTagId?: string | null;
   onSelectProject: (id: string) => void;
-  onSelectView: (view: "dashboard" | "all-tasks" | "due-soon") => void;
+  onSelectView: (view: "dashboard" | "all-tasks" | "due-soon" | "tags") => void;
+  onSelectTag: (tagId: string) => void;
   refreshKey?: number;
 }
 
-export function Sidebar({ activeProjectId, activeView, onSelectProject, onSelectView, refreshKey }: SidebarProps) {
+export function Sidebar({ activeProjectId, activeView, activeTagId, onSelectProject, onSelectView, onSelectTag, refreshKey }: SidebarProps) {
   const [projectList, setProjectList] = useState<Project[]>([]);
   const [tagList, setTagList] = useState<Tag[]>([]);
 
@@ -50,6 +52,14 @@ export function Sidebar({ activeProjectId, activeView, onSelectProject, onSelect
         >
           Due Soon
         </button>
+        <button
+          onClick={() => onSelectView("tags")}
+          className={`w-full text-left px-3 py-2 rounded text-sm font-medium ${
+            activeView === "tags" ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          Tags
+        </button>
 
         <div className="pt-4">
           <h2 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Projects</h2>
@@ -76,16 +86,19 @@ export function Sidebar({ activeProjectId, activeView, onSelectProject, onSelect
             <h2 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tags</h2>
             <div className="mt-2 flex flex-wrap gap-1 px-3">
               {tagList.map((tag) => (
-                <span
+                <button
                   key={tag.id}
-                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                  onClick={() => onSelectTag(tag.id)}
+                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+                    activeTagId === tag.id ? "ring-2 ring-blue-400" : "hover:opacity-80"
+                  }`}
                   style={{
                     backgroundColor: tag.color ? `${tag.color}20` : "#e5e7eb",
                     color: tag.color || "#374151",
                   }}
                 >
                   {tag.name}
-                </span>
+                </button>
               ))}
             </div>
           </div>

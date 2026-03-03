@@ -4,14 +4,16 @@ import { Sidebar } from "./Sidebar";
 interface LayoutProps {
   children: ReactNode;
   activeProjectId: string | null;
-  activeView: "dashboard" | "project" | "all-tasks" | "due-soon";
+  activeView: string;
+  activeTagId?: string | null;
   onSelectProject: (id: string) => void;
-  onSelectView: (view: "dashboard" | "all-tasks" | "due-soon") => void;
+  onSelectView: (view: "dashboard" | "all-tasks" | "due-soon" | "tags") => void;
+  onSelectTag: (tagId: string) => void;
   chatOpen?: boolean;
   refreshKey?: number;
 }
 
-export function Layout({ children, activeProjectId, activeView, onSelectProject, onSelectView, chatOpen, refreshKey }: LayoutProps) {
+export function Layout({ children, activeProjectId, activeView, activeTagId, onSelectProject, onSelectView, onSelectTag, chatOpen, refreshKey }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleSelectProject = (id: string) => {
@@ -19,8 +21,13 @@ export function Layout({ children, activeProjectId, activeView, onSelectProject,
     setSidebarOpen(false);
   };
 
-  const handleSelectView = (view: "dashboard" | "all-tasks" | "due-soon") => {
+  const handleSelectView = (view: "dashboard" | "all-tasks" | "due-soon" | "tags") => {
     onSelectView(view);
+    setSidebarOpen(false);
+  };
+
+  const handleSelectTag = (tagId: string) => {
+    onSelectTag(tagId);
     setSidebarOpen(false);
   };
 
@@ -51,8 +58,10 @@ export function Layout({ children, activeProjectId, activeView, onSelectProject,
         <Sidebar
           activeProjectId={activeProjectId}
           activeView={activeView}
+          activeTagId={activeTagId}
           onSelectProject={handleSelectProject}
           onSelectView={handleSelectView}
+          onSelectTag={handleSelectTag}
           refreshKey={refreshKey}
         />
       </div>

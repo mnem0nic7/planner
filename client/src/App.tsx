@@ -7,8 +7,10 @@ import { AllTasks } from "./pages/AllTasks";
 import { DueSoon } from "./pages/DueSoon";
 import { ChatPanel } from "./components/ChatPanel";
 import { ChatBubble } from "./components/ChatBubble";
+import { TagsPage } from "./pages/TagsPage";
+import { TagTasks } from "./pages/TagTasks";
 
-type View = "dashboard" | "project" | "all-tasks" | "due-soon";
+type View = "dashboard" | "project" | "all-tasks" | "due-soon" | "tags" | "tag-tasks";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state: { error: Error | null } = { error: null };
@@ -40,17 +42,26 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 function App() {
   const [view, setView] = useState<View>("dashboard");
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [activeTagId, setActiveTagId] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleSelectProject = (id: string) => {
     setActiveProjectId(id);
+    setActiveTagId(null);
     setView("project");
   };
 
-  const handleSelectView = (v: "dashboard" | "all-tasks" | "due-soon") => {
+  const handleSelectView = (v: "dashboard" | "all-tasks" | "due-soon" | "tags") => {
     setActiveProjectId(null);
+    setActiveTagId(null);
     setView(v);
+  };
+
+  const handleSelectTag = (tagId: string) => {
+    setActiveTagId(tagId);
+    setActiveProjectId(null);
+    setView("tag-tasks");
   };
 
   const handleDataChange = useCallback(() => {
@@ -62,8 +73,10 @@ function App() {
       <Layout
         activeProjectId={activeProjectId}
         activeView={view}
+        activeTagId={activeTagId}
         onSelectProject={handleSelectProject}
         onSelectView={handleSelectView}
+        onSelectTag={handleSelectTag}
         chatOpen={chatOpen}
         refreshKey={refreshKey}
       >
@@ -71,6 +84,8 @@ function App() {
         {view === "project" && activeProjectId && <ProjectView key={refreshKey} projectId={activeProjectId} />}
         {view === "all-tasks" && <AllTasks key={refreshKey} />}
         {view === "due-soon" && <DueSoon key={refreshKey} />}
+        {view === "tags" && <TagsPage key={refreshKey} />}
+        {view === "tag-tasks" && activeTagId && <TagTasks key={refreshKey} tagId={activeTagId} />}
       </Layout>
 
       {chatOpen ? (

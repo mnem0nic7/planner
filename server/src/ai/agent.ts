@@ -24,6 +24,7 @@ When asked about workload or status, proactively check for overdue tasks and sug
 }
 
 function sendSSE(res: Response, event: string, data: unknown) {
+  if (!res.writable) return;
   res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 }
 

@@ -20,6 +20,7 @@ interface ChatPanelProps {
   open: boolean;
   onClose: () => void;
   onDataChange: () => void;
+  activeProjectId: string | null;
 }
 
 function ToolCallCard({ toolCall }: { toolCall: ToolCallDisplay }) {
@@ -60,7 +61,7 @@ function ToolCallCard({ toolCall }: { toolCall: ToolCallDisplay }) {
   );
 }
 
-export function ChatPanel({ open, onClose, onDataChange }: ChatPanelProps) {
+export function ChatPanel({ open, onClose, onDataChange, activeProjectId }: ChatPanelProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<
@@ -158,6 +159,7 @@ export function ChatPanel({ open, onClose, onDataChange }: ChatPanelProps) {
         body: JSON.stringify({
           conversationId: activeConversationId,
           message: userMsg,
+          ...(activeProjectId && { activeProjectId }),
         }),
       });
 

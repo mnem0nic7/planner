@@ -78,6 +78,7 @@ function App() {
           open={chatOpen}
           onClose={() => setChatOpen(false)}
           onDataChange={handleDataChange}
+          activeProjectId={activeProjectId}
         />
       ) : (
         <ChatBubble onClick={() => setChatOpen(true)} />

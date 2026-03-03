@@ -275,6 +275,31 @@ export const tools: ChatCompletionTool[] = [
   {
     type: "function",
     function: {
+      name: "update_tag",
+      description: "Update an existing tag's name or color.",
+      parameters: {
+        type: "object",
+        properties: {
+          tagId: {
+            type: "string",
+            description: "The ID of the tag to update.",
+          },
+          name: {
+            type: "string",
+            description: "The new name for the tag.",
+          },
+          color: {
+            type: "string",
+            description: "The new hex color code for the tag (e.g. '#ef4444').",
+          },
+        },
+        required: ["tagId"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "add_tag_to_task",
       description: "Add an existing tag to a task.",
       parameters: {

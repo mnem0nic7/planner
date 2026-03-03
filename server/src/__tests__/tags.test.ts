@@ -121,6 +121,16 @@ describe("Tags API", () => {
     });
   });
 
+  describe("update_tag AI tool", () => {
+    it("updates tag via toolExecutor", async () => {
+      const { executeTool } = await import("../ai/toolExecutor.js");
+      const tag = await prisma.tag.create({ data: { name: `ai-tag-${Date.now()}`, color: "#111111" } });
+      const result = await executeTool("update_tag", { tagId: tag.id, name: `updated-${Date.now()}`, color: "#222222" });
+      expect(result).toHaveProperty("name");
+      expect((result as { color: string }).color).toBe("#222222");
+    });
+  });
+
   describe("Task-Tag association", () => {
     let taskId: string;
     let tagId: string;

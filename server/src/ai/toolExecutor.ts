@@ -183,6 +183,23 @@ export async function executeTool(
       return prisma.tag.create({ data: { name, color } });
     }
 
+    case "update_tag": {
+      const tagId = requireString(args, "tagId");
+      const existing = await prisma.tag.findUnique({ where: { id: tagId } });
+      if (!existing) throw new Error(`Tag not found: ${tagId}`);
+      const data: Record<string, unknown> = {};
+      if (args.name !== undefined) {
+        const newName = requireString(args, "name", 100);
+        if (newName !== existing.name) {
+          const duplicate = await prisma.tag.findUnique({ where: { name: newName } });
+          if (duplicate) throw new Error(`Tag name already exists: ${newName}`);
+        }
+        data.name = newName;
+      }
+      if (args.color !== undefined) data.color = validateColor(args.color);
+      return prisma.tag.update({ where: { id: tagId }, data });
+    }
+
     case "add_tag_to_task": {
       const taskId = args.taskId as string;
       const tagId = args.tagId as string;

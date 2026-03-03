@@ -37,6 +37,7 @@ function ToolCallCard({ toolCall }: { toolCall: ToolCallDisplay }) {
     delete_task: "Deleted task",
     list_tags: "Listed tags",
     create_tag: "Created tag",
+    update_tag: "Updated tag",
     add_tag_to_task: "Added tag to task",
     remove_tag_from_task: "Removed tag from task",
     get_due_soon: "Checked upcoming tasks",

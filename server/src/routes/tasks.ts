@@ -12,12 +12,64 @@ function isValidDate(value: string): boolean {
   return typeof value === "string" && ISO_DATE_RE.test(value) && !isNaN(new Date(value).getTime());
 }
 
-// GET /api/tasks (all tasks across projects)
-router.get("/tasks", async (_req, res) => {
+// GET /api/tasks (with optional filters & sorting)
+router.get("/tasks", async (req, res) => {
+  const where: Record<string, unknown> = {};
+
+  // Filter: projectId
+  if (req.query.projectId && typeof req.query.projectId === "string") {
+    where.projectId = req.query.projectId;
+  }
+
+  // Filter: completed
+  if (req.query.completed === "true") where.completed = true;
+  else if (req.query.completed === "false") where.completed = false;
+
+  // Filter: priority (comma-separated)
+  if (req.query.priority && typeof req.query.priority === "string") {
+    const priorities = req.query.priority.split(",").filter(p => VALID_PRIORITIES.includes(p));
+    if (priorities.length === 1) where.priority = priorities[0];
+    else if (priorities.length > 1) where.priority = { in: priorities };
+  }
+
+  // Filter: dueBefore / dueAfter
+  const dueDateFilter: Record<string, Date> = {};
+  if (req.query.dueBefore && typeof req.query.dueBefore === "string" && isValidDate(req.query.dueBefore)) {
+    dueDateFilter.lte = new Date(req.query.dueBefore as string);
+  }
+  if (req.query.dueAfter && typeof req.query.dueAfter === "string" && isValidDate(req.query.dueAfter)) {
+    dueDateFilter.gte = new Date(req.query.dueAfter as string);
+  }
+  if (Object.keys(dueDateFilter).length > 0) {
+    where.dueDate = dueDateFilter;
+  }
+
+  // Sort
+  const VALID_SORT_FIELDS = ["dueDate", "priority", "createdAt", "title"];
+  const sortBy = req.query.sortBy && typeof req.query.sortBy === "string" && VALID_SORT_FIELDS.includes(req.query.sortBy)
+    ? req.query.sortBy : null;
+  const sortDir = req.query.sortOrder === "desc" ? "desc" : "asc";
+
+  // Priority sorts by ordinal (LOW=0, MEDIUM=1, HIGH=2, URGENT=3) in application code
+  const orderBy: Record<string, string> = sortBy && sortBy !== "priority"
+    ? { [sortBy]: sortDir }
+    : { createdAt: "desc" };
+
   const tasks = await prisma.task.findMany({
+    where,
     include: { tags: { include: { tag: true } }, project: true },
-    orderBy: { createdAt: "desc" },
+    orderBy,
   });
+
+  // Application-level sort for priority (alphabetical DB sort doesn't match severity)
+  if (sortBy === "priority") {
+    const priorityOrder: Record<string, number> = { LOW: 0, MEDIUM: 1, HIGH: 2, URGENT: 3 };
+    tasks.sort((a, b) => {
+      const diff = (priorityOrder[a.priority] ?? 0) - (priorityOrder[b.priority] ?? 0);
+      return sortDir === "desc" ? -diff : diff;
+    });
+  }
+
   res.json(tasks);
 });
 

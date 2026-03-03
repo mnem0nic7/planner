@@ -262,6 +262,59 @@ describe("Tasks API", () => {
     });
   });
 
+  describe("GET /api/tasks (filtering & sorting)", () => {
+    let filterProjectId: string;
+
+    beforeEach(async () => {
+      const project = await prisma.project.create({ data: { name: `filter-${Date.now()}` } });
+      filterProjectId = project.id;
+      await prisma.task.createMany({
+        data: [
+          { title: "A-Low", priority: "LOW", completed: false, sortOrder: 0, projectId: filterProjectId, dueDate: new Date("2026-03-10") },
+          { title: "B-High", priority: "HIGH", completed: false, sortOrder: 1, projectId: filterProjectId, dueDate: new Date("2026-03-05") },
+          { title: "C-Done", priority: "MEDIUM", completed: true, completedAt: new Date(), sortOrder: 2, projectId: filterProjectId },
+        ],
+      });
+    });
+
+    it("filters by projectId", async () => {
+      const res = await request(app).get(`/api/tasks?projectId=${filterProjectId}`);
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(3);
+    });
+
+    it("filters by completed=false", async () => {
+      const res = await request(app).get(`/api/tasks?completed=false&projectId=${filterProjectId}`);
+      expect(res.status).toBe(200);
+      expect(res.body.every((t: { completed: boolean }) => !t.completed)).toBe(true);
+    });
+
+    it("filters by priority", async () => {
+      const res = await request(app).get(`/api/tasks?priority=HIGH&projectId=${filterProjectId}`);
+      expect(res.status).toBe(200);
+      expect(res.body.every((t: { priority: string }) => t.priority === "HIGH")).toBe(true);
+    });
+
+    it("filters by dueBefore", async () => {
+      const res = await request(app).get(`/api/tasks?dueBefore=2026-03-08&projectId=${filterProjectId}`);
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBeGreaterThanOrEqual(1);
+      expect(res.body.some((t: { title: string }) => t.title === "B-High")).toBe(true);
+    });
+
+    it("sorts by priority desc", async () => {
+      const res = await request(app).get(`/api/tasks?sortBy=priority&sortOrder=desc&projectId=${filterProjectId}`);
+      expect(res.status).toBe(200);
+      const priorities = res.body.map((t: { priority: string }) => t.priority);
+      expect(priorities.indexOf("HIGH")).toBeLessThan(priorities.indexOf("LOW"));
+    });
+
+    it("sorts by dueDate asc", async () => {
+      const res = await request(app).get(`/api/tasks?sortBy=dueDate&sortOrder=asc&projectId=${filterProjectId}`);
+      expect(res.status).toBe(200);
+    });
+  });
+
   describe("GET /api/tasks/due-soon", () => {
     it("returns tasks due within 7 days", async () => {
       const p = await prisma.project.create({ data: { name: "P" } });

@@ -313,6 +313,19 @@ describe("Tasks API", () => {
       const res = await request(app).get(`/api/tasks?sortBy=dueDate&sortOrder=asc&projectId=${filterProjectId}`);
       expect(res.status).toBe(200);
     });
+
+    it("filters by tagId", async () => {
+      const tag = await prisma.tag.create({ data: { name: `filter-tag-${Date.now()}` } });
+      const project = await prisma.project.create({ data: { name: `tagfilter-${Date.now()}` } });
+      const t1 = await prisma.task.create({ data: { title: "Tagged", projectId: project.id, sortOrder: 0 } });
+      await prisma.task.create({ data: { title: "Untagged", projectId: project.id, sortOrder: 1 } });
+      await prisma.taskTag.create({ data: { taskId: t1.id, tagId: tag.id } });
+
+      const res = await request(app).get(`/api/tasks?tagId=${tag.id}`);
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(1);
+      expect(res.body[0].title).toBe("Tagged");
+    });
   });
 
   describe("GET /api/tasks/due-soon", () => {

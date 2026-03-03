@@ -40,6 +40,11 @@ router.get("/tasks", async (req, res) => {
     else if (priorities.length > 1) where.priority = { in: priorities };
   }
 
+  // Filter: tagId (tasks that have this tag via TaskTag join)
+  if (req.query.tagId && typeof req.query.tagId === "string") {
+    where.tags = { some: { tagId: req.query.tagId } };
+  }
+
   // Filter: dueBefore / dueAfter
   const dueDateFilter: Record<string, Date> = {};
   if (req.query.dueBefore && typeof req.query.dueBefore === "string" && isValidDate(req.query.dueBefore)) {

@@ -44,6 +44,36 @@ export const tasks = {
     request<void>(`/tasks/${taskId}/tags`, { method: "POST", body: JSON.stringify({ tagId }) }),
   removeTag: (taskId: string, tagId: string) =>
     request<void>(`/tasks/${taskId}/tags/${tagId}`, { method: "DELETE" }),
+  listFiltered: (params: {
+    projectId?: string;
+    completed?: boolean;
+    priority?: string;
+    dueBefore?: string;
+    dueAfter?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  }) => {
+    const searchParams = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined) searchParams.set(key, String(value));
+    }
+    return request<Task[]>(`/tasks?${searchParams.toString()}`);
+  },
+  bulkComplete: (taskIds: string[], completed: boolean) =>
+    request<{ count: number }>("/tasks/bulk-complete", {
+      method: "PATCH",
+      body: JSON.stringify({ taskIds, completed }),
+    }),
+  bulkDelete: (taskIds: string[]) =>
+    request<{ count: number }>("/tasks/bulk-delete", {
+      method: "POST",
+      body: JSON.stringify({ taskIds }),
+    }),
+  bulkMove: (taskIds: string[], projectId: string) =>
+    request<{ count: number }>("/tasks/bulk-move", {
+      method: "PATCH",
+      body: JSON.stringify({ taskIds, projectId }),
+    }),
 };
 
 // Tags
@@ -51,6 +81,8 @@ export const tags = {
   list: () => request<Tag[]>("/tags"),
   create: (data: { name: string; color?: string }) =>
     request<Tag>("/tags", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: string, data: { name?: string; color?: string }) =>
+    request<Tag>(`/tags/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   delete: (id: string) => request<void>(`/tags/${id}`, { method: "DELETE" }),
 };
 

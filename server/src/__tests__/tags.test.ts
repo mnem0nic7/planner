@@ -13,6 +13,20 @@ describe("Tags API", () => {
       expect(found).toBeDefined();
       expect(found.color).toBe("#3b82f6");
     });
+
+    it("includes task count per tag", async () => {
+      const tag = await prisma.tag.create({ data: { name: `counted-${Date.now()}` } });
+      const project = await prisma.project.create({ data: { name: `P-${Date.now()}` } });
+      const task = await prisma.task.create({
+        data: { title: "T", projectId: project.id, sortOrder: 0 },
+      });
+      await prisma.taskTag.create({ data: { taskId: task.id, tagId: tag.id } });
+
+      const res = await request(app).get("/api/tags");
+      expect(res.status).toBe(200);
+      const found = res.body.find((t: { id: string }) => t.id === tag.id);
+      expect(found._count.tasks).toBe(1);
+    });
   });
 
   describe("POST /api/tags", () => {

@@ -8,7 +8,10 @@ const MAX_NAME_LENGTH = 100;
 
 // GET /api/tags
 router.get("/", async (_req, res) => {
-  const tags = await prisma.tag.findMany({ orderBy: { name: "asc" } });
+  const tags = await prisma.tag.findMany({
+    orderBy: { name: "asc" },
+    include: { _count: { select: { tasks: true } } },
+  });
   res.json(tags);
 });
 

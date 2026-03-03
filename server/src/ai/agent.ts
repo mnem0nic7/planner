@@ -9,13 +9,18 @@ const MAX_TOOLS_PER_ROUND = 5;
 
 const openai = new OpenAI();
 
-function buildSystemPrompt(): string {
-  return `You are an AI assistant for a personal planner app. Today is ${new Date().toISOString().split("T")[0]}.
+export function buildSystemPrompt(projectContext?: string): string {
+  let prompt = `You are an AI assistant for a personal planner app. Today is ${new Date().toISOString().split("T")[0]}.
 
 You help the user manage their projects, tasks, and tags. Be concise and action-oriented.
 When the user asks you to do something, use your tools to do it immediately — don't just describe what you would do.
 After making changes, briefly confirm what you did.
 When asked about workload or status, proactively check for overdue tasks and suggest priorities.`;
+
+  if (projectContext) {
+    prompt += `\n\n${projectContext}`;
+  }
+  return prompt;
 }
 
 function sendSSE(res: Response, event: string, data: unknown) {
@@ -26,10 +31,11 @@ export async function streamChat(
   res: Response,
   history: ChatCompletionMessageParam[],
   userMessage: string,
-  abortSignal?: { aborted: boolean }
+  abortSignal?: { aborted: boolean },
+  projectContext?: string
 ): Promise<ChatCompletionMessageParam[]> {
   const messages: ChatCompletionMessageParam[] = [
-    { role: "system", content: buildSystemPrompt() },
+    { role: "system", content: buildSystemPrompt(projectContext) },
     ...history,
     { role: "user", content: userMessage },
   ];

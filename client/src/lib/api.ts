@@ -52,6 +52,7 @@ export const tasks = {
     dueAfter?: string;
     sortBy?: string;
     sortOrder?: string;
+    tagId?: string;
   }) => {
     const searchParams = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {

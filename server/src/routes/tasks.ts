@@ -6,6 +6,14 @@ const router = Router();
 const VALID_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 const MAX_TITLE_LENGTH = 500;
 const MAX_DESCRIPTION_LENGTH = 10000;
+const MAX_BULK_IDS = 50;
+
+function validateTaskIds(taskIds: unknown): string[] | null {
+  if (!Array.isArray(taskIds) || taskIds.length === 0) return null;
+  if (taskIds.length > MAX_BULK_IDS) return null;
+  if (!taskIds.every(id => typeof id === "string" && id.trim().length > 0 && id.length < 100)) return null;
+  return taskIds as string[];
+}
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]+)?$/;
 function isValidDate(value: string): boolean {
@@ -86,6 +94,71 @@ router.get("/tasks/due-soon", async (_req, res) => {
     orderBy: { dueDate: "asc" },
   });
   res.json(tasks);
+});
+
+// PATCH /api/tasks/bulk-complete
+router.patch("/tasks/bulk-complete", async (req, res) => {
+  const { taskIds: rawIds, completed } = req.body;
+  const taskIds = validateTaskIds(rawIds);
+  if (!taskIds) {
+    res.status(400).json({ error: `taskIds must be a non-empty array of up to ${MAX_BULK_IDS} IDs` });
+    return;
+  }
+  if (typeof completed !== "boolean") {
+    res.status(400).json({ error: "completed must be a boolean" });
+    return;
+  }
+
+  const result = await prisma.task.updateMany({
+    where: { id: { in: taskIds } },
+    data: {
+      completed,
+      completedAt: completed ? new Date() : null,
+    },
+  });
+  res.json({ count: result.count });
+});
+
+// POST /api/tasks/bulk-delete (POST to allow request body)
+router.post("/tasks/bulk-delete", async (req, res) => {
+  const taskIds = validateTaskIds(req.body.taskIds);
+  if (!taskIds) {
+    res.status(400).json({ error: `taskIds must be a non-empty array of up to ${MAX_BULK_IDS} IDs` });
+    return;
+  }
+
+  await prisma.$transaction([
+    prisma.taskTag.deleteMany({ where: { taskId: { in: taskIds } } }),
+    prisma.task.deleteMany({ where: { id: { in: taskIds } } }),
+  ]);
+  const result = { count: taskIds.length };
+  res.json(result);
+});
+
+// PATCH /api/tasks/bulk-move
+router.patch("/tasks/bulk-move", async (req, res) => {
+  const { taskIds: rawIds, projectId } = req.body;
+  const taskIds = validateTaskIds(rawIds);
+  if (!taskIds) {
+    res.status(400).json({ error: `taskIds must be a non-empty array of up to ${MAX_BULK_IDS} IDs` });
+    return;
+  }
+  if (!projectId || typeof projectId !== "string") {
+    res.status(400).json({ error: "projectId is required" });
+    return;
+  }
+
+  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  if (!project) {
+    res.status(404).json({ error: "Target project not found" });
+    return;
+  }
+
+  const result = await prisma.task.updateMany({
+    where: { id: { in: taskIds } },
+    data: { projectId },
+  });
+  res.json({ count: result.count });
 });
 
 // GET /api/projects/:id/tasks

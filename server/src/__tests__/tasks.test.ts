@@ -343,6 +343,98 @@ describe("Tasks API", () => {
     });
   });
 
+  describe("PATCH /api/tasks/bulk-complete", () => {
+    it("bulk completes multiple tasks", async () => {
+      const project = await prisma.project.create({ data: { name: `bulk-${Date.now()}` } });
+      const t1 = await prisma.task.create({ data: { title: "T1", projectId: project.id, sortOrder: 0 } });
+      const t2 = await prisma.task.create({ data: { title: "T2", projectId: project.id, sortOrder: 1 } });
+      const res = await request(app)
+        .patch("/api/tasks/bulk-complete")
+        .send({ taskIds: [t1.id, t2.id], completed: true });
+      expect(res.status).toBe(200);
+      expect(res.body.count).toBe(2);
+      const updated = await prisma.task.findMany({ where: { id: { in: [t1.id, t2.id] } } });
+      expect(updated.every(t => t.completed)).toBe(true);
+    });
+
+    it("bulk uncompletes tasks", async () => {
+      const project = await prisma.project.create({ data: { name: `bulkun-${Date.now()}` } });
+      const t = await prisma.task.create({
+        data: { title: "Done", projectId: project.id, sortOrder: 0, completed: true, completedAt: new Date() },
+      });
+      const res = await request(app)
+        .patch("/api/tasks/bulk-complete")
+        .send({ taskIds: [t.id], completed: false });
+      expect(res.status).toBe(200);
+      const updated = await prisma.task.findUnique({ where: { id: t.id } });
+      expect(updated!.completed).toBe(false);
+      expect(updated!.completedAt).toBeNull();
+    });
+
+    it("rejects empty taskIds array", async () => {
+      const res = await request(app).patch("/api/tasks/bulk-complete").send({ taskIds: [], completed: true });
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects more than 50 taskIds", async () => {
+      const ids = Array.from({ length: 51 }, (_, i) => `id-${i}`);
+      const res = await request(app).patch("/api/tasks/bulk-complete").send({ taskIds: ids, completed: true });
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe("POST /api/tasks/bulk-delete", () => {
+    it("deletes multiple tasks", async () => {
+      const project = await prisma.project.create({ data: { name: `bulkdel-${Date.now()}` } });
+      const t1 = await prisma.task.create({ data: { title: "Del1", projectId: project.id, sortOrder: 0 } });
+      const t2 = await prisma.task.create({ data: { title: "Del2", projectId: project.id, sortOrder: 1 } });
+      const res = await request(app)
+        .post("/api/tasks/bulk-delete")
+        .send({ taskIds: [t1.id, t2.id] });
+      expect(res.status).toBe(200);
+      expect(res.body.count).toBe(2);
+      const remaining = await prisma.task.findMany({ where: { id: { in: [t1.id, t2.id] } } });
+      expect(remaining).toHaveLength(0);
+    });
+
+    it("rejects empty taskIds", async () => {
+      const res = await request(app).post("/api/tasks/bulk-delete").send({ taskIds: [] });
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe("PATCH /api/tasks/bulk-move", () => {
+    it("moves tasks to a different project", async () => {
+      const p1 = await prisma.project.create({ data: { name: `src-${Date.now()}` } });
+      const p2 = await prisma.project.create({ data: { name: `dst-${Date.now()}` } });
+      const t1 = await prisma.task.create({ data: { title: "Move1", projectId: p1.id, sortOrder: 0 } });
+      const t2 = await prisma.task.create({ data: { title: "Move2", projectId: p1.id, sortOrder: 1 } });
+      const res = await request(app)
+        .patch("/api/tasks/bulk-move")
+        .send({ taskIds: [t1.id, t2.id], projectId: p2.id });
+      expect(res.status).toBe(200);
+      expect(res.body.count).toBe(2);
+      const moved = await prisma.task.findMany({ where: { id: { in: [t1.id, t2.id] } } });
+      expect(moved.every(t => t.projectId === p2.id)).toBe(true);
+    });
+
+    it("returns 404 for non-existent target project", async () => {
+      const project = await prisma.project.create({ data: { name: `movesrc-${Date.now()}` } });
+      const t = await prisma.task.create({ data: { title: "MoveX", projectId: project.id, sortOrder: 0 } });
+      const res = await request(app)
+        .patch("/api/tasks/bulk-move")
+        .send({ taskIds: [t.id], projectId: "nonexistent" });
+      expect(res.status).toBe(404);
+    });
+
+    it("rejects missing projectId", async () => {
+      const res = await request(app)
+        .patch("/api/tasks/bulk-move")
+        .send({ taskIds: ["some-id"] });
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe("list_tasks AI tool (enhanced)", () => {
     it("filters by dueBefore via toolExecutor", async () => {
       const { executeTool } = await import("../ai/toolExecutor.js");

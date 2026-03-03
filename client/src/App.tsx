@@ -84,8 +84,10 @@ function App() {
         {view === "project" && activeProjectId && <ProjectView key={refreshKey} projectId={activeProjectId} />}
         {view === "all-tasks" && <AllTasks key={refreshKey} />}
         {view === "due-soon" && <DueSoon key={refreshKey} />}
-        {view === "tags" && <TagsPage key={refreshKey} />}
-        {view === "tag-tasks" && activeTagId && <TagTasks key={refreshKey} tagId={activeTagId} />}
+        {view === "tags" && <TagsPage key={refreshKey} onDataChange={handleDataChange} />}
+        {view === "tag-tasks" && activeTagId && (
+          <TagTasks key={refreshKey} tagId={activeTagId} onBack={() => handleSelectView("tags")} />
+        )}
       </Layout>
 
       {chatOpen ? (

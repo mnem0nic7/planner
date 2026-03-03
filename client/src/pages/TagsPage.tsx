@@ -4,7 +4,11 @@ import type { Tag } from "../lib/types";
 
 const DEFAULT_COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16"];
 
-export function TagsPage() {
+interface TagsPageProps {
+  onDataChange?: () => void;
+}
+
+export function TagsPage({ onDataChange }: TagsPageProps) {
   const [tagList, setTagList] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +48,7 @@ export function TagsPage() {
       setNewName("");
       setNewColor(DEFAULT_COLORS[Math.floor(Math.random() * DEFAULT_COLORS.length)]);
       load();
+      onDataChange?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create tag");
     } finally {
@@ -64,6 +69,7 @@ export function TagsPage() {
       await tagsApi.update(editingId, { name: editName.trim(), color: editColor });
       setEditingId(null);
       load();
+      onDataChange?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to update tag");
     }
@@ -75,6 +81,7 @@ export function TagsPage() {
       await tagsApi.delete(id);
       setDeletingId(null);
       load();
+      onDataChange?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to delete tag");
     }

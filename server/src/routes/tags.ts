@@ -94,7 +94,10 @@ router.delete("/:id", async (req, res) => {
     res.status(404).json({ error: "Tag not found" });
     return;
   }
-  await prisma.tag.delete({ where: { id: req.params.id } });
+  await prisma.$transaction([
+    prisma.taskTag.deleteMany({ where: { tagId: req.params.id } }),
+    prisma.tag.delete({ where: { id: req.params.id } }),
+  ]);
   res.status(204).send();
 });
 

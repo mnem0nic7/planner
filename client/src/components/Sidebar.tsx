@@ -55,7 +55,7 @@ export function Sidebar({ activeProjectId, activeView, activeTagId, onSelectProj
         <button
           onClick={() => onSelectView("tags")}
           className={`w-full text-left px-3 py-2 rounded text-sm font-medium ${
-            activeView === "tags" ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-100"
+            activeView === "tags" || activeView === "tag-tasks" ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-100"
           }`}
         >
           Tags

@@ -208,7 +208,10 @@ export async function executeTool(
     }
 
     case "list_tags": {
-      return prisma.tag.findMany({ orderBy: { name: "asc" } });
+      return prisma.tag.findMany({
+        orderBy: { name: "asc" },
+        include: { _count: { select: { tasks: true } } },
+      });
     }
 
     case "create_tag": {

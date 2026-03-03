@@ -389,4 +389,66 @@ export const tools: ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "bulk_complete_tasks",
+      description: "Mark multiple tasks as completed or uncompleted at once.",
+      parameters: {
+        type: "object",
+        properties: {
+          taskIds: {
+            type: "array",
+            items: { type: "string" },
+            description: "Array of task IDs to update (max 50).",
+          },
+          completed: {
+            type: "boolean",
+            description: "Set to true to mark complete, false to mark incomplete.",
+          },
+        },
+        required: ["taskIds", "completed"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "bulk_delete_tasks",
+      description: "Delete multiple tasks at once. This cannot be undone.",
+      parameters: {
+        type: "object",
+        properties: {
+          taskIds: {
+            type: "array",
+            items: { type: "string" },
+            description: "Array of task IDs to delete (max 50).",
+          },
+        },
+        required: ["taskIds"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "bulk_move_tasks",
+      description: "Move multiple tasks to a different project.",
+      parameters: {
+        type: "object",
+        properties: {
+          taskIds: {
+            type: "array",
+            items: { type: "string" },
+            description: "Array of task IDs to move (max 50).",
+          },
+          projectId: {
+            type: "string",
+            description: "The ID of the target project to move tasks to.",
+          },
+        },
+        required: ["taskIds", "projectId"],
+      },
+    },
+  },
 ];

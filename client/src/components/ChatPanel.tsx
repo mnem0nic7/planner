@@ -42,6 +42,9 @@ function ToolCallCard({ toolCall }: { toolCall: ToolCallDisplay }) {
     remove_tag_from_task: "Removed tag from task",
     get_due_soon: "Checked upcoming tasks",
     get_workload_summary: "Checked workload",
+    bulk_complete_tasks: "Bulk completed tasks",
+    bulk_delete_tasks: "Bulk deleted tasks",
+    bulk_move_tasks: "Bulk moved tasks",
   };
 
   const label = friendlyNames[toolCall.name] || toolCall.name;

@@ -51,6 +51,16 @@ function positiveInt(args: Record<string, unknown>, key: string, defaultVal: num
   return Math.floor(n);
 }
 
+const MAX_BULK_IDS = 50;
+
+function validateTaskIdsArg(args: Record<string, unknown>): string[] {
+  const ids = args.taskIds;
+  if (!Array.isArray(ids) || ids.length === 0) throw new Error("taskIds must be a non-empty array");
+  if (ids.length > MAX_BULK_IDS) throw new Error(`taskIds can contain at most ${MAX_BULK_IDS} items`);
+  if (!ids.every(id => typeof id === "string" && id.trim())) throw new Error("Each taskId must be a non-empty string");
+  return ids as string[];
+}
+
 export async function executeTool(
   name: string,
   args: Record<string, unknown>
@@ -284,6 +294,38 @@ export async function executeTool(
         overdue,
         byPriority,
       };
+    }
+
+    case "bulk_complete_tasks": {
+      const taskIds = validateTaskIdsArg(args);
+      const completed = args.completed as boolean;
+      if (typeof completed !== "boolean") throw new Error("completed must be a boolean");
+      const result = await prisma.task.updateMany({
+        where: { id: { in: taskIds } },
+        data: { completed, completedAt: completed ? new Date() : null },
+      });
+      return { count: result.count };
+    }
+
+    case "bulk_delete_tasks": {
+      const taskIds = validateTaskIdsArg(args);
+      await prisma.$transaction([
+        prisma.taskTag.deleteMany({ where: { taskId: { in: taskIds } } }),
+        prisma.task.deleteMany({ where: { id: { in: taskIds } } }),
+      ]);
+      return { count: taskIds.length };
+    }
+
+    case "bulk_move_tasks": {
+      const taskIds = validateTaskIdsArg(args);
+      const projectId = requireString(args, "projectId");
+      const project = await prisma.project.findUnique({ where: { id: projectId } });
+      if (!project) throw new Error(`Project not found: ${projectId}`);
+      const result = await prisma.task.updateMany({
+        where: { id: { in: taskIds } },
+        data: { projectId },
+      });
+      return { count: result.count };
     }
 
     default:

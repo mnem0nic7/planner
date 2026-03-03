@@ -435,6 +435,40 @@ describe("Tasks API", () => {
     });
   });
 
+  describe("bulk AI tools", () => {
+    it("bulk_complete_tasks via toolExecutor", async () => {
+      const { executeTool } = await import("../ai/toolExecutor.js");
+      const project = await prisma.project.create({ data: { name: `aibulk-${Date.now()}` } });
+      const t1 = await prisma.task.create({ data: { title: "BT1", projectId: project.id, sortOrder: 0 } });
+      const t2 = await prisma.task.create({ data: { title: "BT2", projectId: project.id, sortOrder: 1 } });
+      const result = await executeTool("bulk_complete_tasks", { taskIds: [t1.id, t2.id], completed: true });
+      expect(result).toHaveProperty("count", 2);
+    });
+
+    it("bulk_delete_tasks via toolExecutor", async () => {
+      const { executeTool } = await import("../ai/toolExecutor.js");
+      const project = await prisma.project.create({ data: { name: `aibulkdel-${Date.now()}` } });
+      const t = await prisma.task.create({ data: { title: "BD1", projectId: project.id, sortOrder: 0 } });
+      const result = await executeTool("bulk_delete_tasks", { taskIds: [t.id] });
+      expect(result).toHaveProperty("count");
+    });
+
+    it("bulk_move_tasks via toolExecutor", async () => {
+      const { executeTool } = await import("../ai/toolExecutor.js");
+      const p1 = await prisma.project.create({ data: { name: `aibulkmov1-${Date.now()}` } });
+      const p2 = await prisma.project.create({ data: { name: `aibulkmov2-${Date.now()}` } });
+      const t = await prisma.task.create({ data: { title: "BM1", projectId: p1.id, sortOrder: 0 } });
+      const result = await executeTool("bulk_move_tasks", { taskIds: [t.id], projectId: p2.id });
+      expect(result).toHaveProperty("count", 1);
+    });
+
+    it("bulk_complete_tasks rejects empty array", async () => {
+      const { executeTool } = await import("../ai/toolExecutor.js");
+      await expect(executeTool("bulk_complete_tasks", { taskIds: [], completed: true }))
+        .rejects.toThrow();
+    });
+  });
+
   describe("list_tasks AI tool (enhanced)", () => {
     it("filters by dueBefore via toolExecutor", async () => {
       const { executeTool } = await import("../ai/toolExecutor.js");

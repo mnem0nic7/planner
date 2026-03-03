@@ -17,6 +17,7 @@ export function TagTasks({ tagId, onBack }: TagTasksProps) {
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
+    setLoading(true);
     try {
       const [allTags, data] = await Promise.all([
         tagsApi.list(),
@@ -94,6 +95,7 @@ export function TagTasks({ tagId, onBack }: TagTasksProps) {
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
           onUpdate={() => { load(); setSelectedTask(null); }}
+          onRefresh={load}
         />
       )}
     </div>

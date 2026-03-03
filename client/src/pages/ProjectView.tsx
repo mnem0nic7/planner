@@ -99,6 +99,7 @@ export function ProjectView({ projectId }: ProjectViewProps) {
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
           onUpdate={() => { load(); setSelectedTask(null); }}
+          onRefresh={load}
         />
       )}
     </div>

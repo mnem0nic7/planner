@@ -167,6 +167,11 @@ export function ChatPanel({ open, onClose, onDataChange, activeProjectId }: Chat
         }),
       });
 
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Request failed: ${res.status}`);
+      }
+
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
@@ -235,6 +240,12 @@ export function ChatPanel({ open, onClose, onDataChange, activeProjectId }: Chat
           toolCalls:
             currentToolCalls.length > 0 ? [...currentToolCalls] : undefined,
         },
+      ]);
+    } catch (e) {
+      const errMsg = e instanceof Error ? e.message : "Something went wrong";
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: `Error: ${errMsg}` },
       ]);
     } finally {
       setIsStreaming(false);

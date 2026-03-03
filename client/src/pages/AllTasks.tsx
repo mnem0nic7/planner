@@ -58,6 +58,7 @@ export function AllTasks() {
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
           onUpdate={() => { load(); setSelectedTask(null); }}
+          onRefresh={load}
         />
       )}
     </div>

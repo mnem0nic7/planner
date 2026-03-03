@@ -146,6 +146,7 @@ export function TagsPage({ onDataChange }: TagsPageProps) {
                     value={editColor}
                     onChange={(e) => setEditColor(e.target.value)}
                     className="w-8 h-8 rounded cursor-pointer border-0"
+                    title="Tag color"
                   />
                   <input
                     type="text"

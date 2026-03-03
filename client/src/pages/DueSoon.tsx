@@ -68,6 +68,7 @@ export function DueSoon() {
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
           onUpdate={() => { load(); setSelectedTask(null); }}
+          onRefresh={load}
         />
       )}
     </div>

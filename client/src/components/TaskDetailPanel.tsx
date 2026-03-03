@@ -6,22 +6,31 @@ interface TaskDetailPanelProps {
   task: Task;
   onClose: () => void;
   onUpdate: () => void;
+  onRefresh?: () => void;
 }
 
 const PRIORITIES: Priority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 
-export function TaskDetailPanel({ task, onClose, onUpdate }: TaskDetailPanelProps) {
+export function TaskDetailPanel({ task, onClose, onUpdate, onRefresh }: TaskDetailPanelProps) {
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description || "");
   const [priority, setPriority] = useState<Priority>(task.priority);
   const [dueDate, setDueDate] = useState(task.dueDate?.split("T")[0] || "");
   const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [activeTagIds, setActiveTagIds] = useState<Set<string>>(
+    new Set(task.tags.map((t) => t.tagId))
+  );
   const [error, setError] = useState<string | null>(null);
   const savingRef = useRef(false);
 
   useEffect(() => {
     tagsApi.list().then(setAllTags).catch(() => { /* tags load is non-critical */ });
   }, []);
+
+  // Sync active tags when task prop changes (e.g., parent refreshes)
+  useEffect(() => {
+    setActiveTagIds(new Set(task.tags.map((t) => t.tagId)));
+  }, [task]);
 
   // Save on blur — uses a ref to prevent concurrent saves
   const handleSave = async () => {
@@ -54,15 +63,30 @@ export function TaskDetailPanel({ task, onClose, onUpdate }: TaskDetailPanelProp
   };
 
   const handleToggleTag = async (tag: Tag) => {
+    const hasTag = activeTagIds.has(tag.id);
+    // Optimistic update
+    setActiveTagIds((prev) => {
+      const next = new Set(prev);
+      if (hasTag) next.delete(tag.id);
+      else next.add(tag.id);
+      return next;
+    });
     try {
-      const hasTag = task.tags.some((t) => t.tagId === tag.id);
       if (hasTag) {
         await tasksApi.removeTag(task.id, tag.id);
       } else {
         await tasksApi.addTag(task.id, tag.id);
       }
-      onUpdate();
+      // Refresh parent data without closing the panel
+      (onRefresh || onUpdate)();
     } catch {
+      // Revert optimistic update
+      setActiveTagIds((prev) => {
+        const next = new Set(prev);
+        if (hasTag) next.add(tag.id);
+        else next.delete(tag.id);
+        return next;
+      });
       setError("Failed to update tag");
     }
   };
@@ -104,11 +128,9 @@ export function TaskDetailPanel({ task, onClose, onUpdate }: TaskDetailPanelProp
             <select
               value={priority}
               onChange={(e) => {
-                const newPriority = e.target.value as Priority;
-                setPriority(newPriority);
-                // Save immediately since select onChange means the value is final
-                tasksApi.update(task.id, { priority: newPriority }).then(onUpdate).catch(() => setError("Failed to save changes"));
+                setPriority(e.target.value as Priority);
               }}
+              onBlur={handleSave}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {PRIORITIES.map((p) => (
@@ -145,7 +167,7 @@ export function TaskDetailPanel({ task, onClose, onUpdate }: TaskDetailPanelProp
               <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
               <div className="flex flex-wrap gap-2">
                 {allTags.map((tag) => {
-                  const active = task.tags.some((t) => t.tagId === tag.id);
+                  const active = activeTagIds.has(tag.id);
                   return (
                     <button
                       key={tag.id}

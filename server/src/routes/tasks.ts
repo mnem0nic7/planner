@@ -132,12 +132,11 @@ router.post("/tasks/bulk-delete", async (req, res) => {
     return;
   }
 
-  await prisma.$transaction([
+  const [, deleteResult] = await prisma.$transaction([
     prisma.taskTag.deleteMany({ where: { taskId: { in: taskIds } } }),
     prisma.task.deleteMany({ where: { id: { in: taskIds } } }),
   ]);
-  const result = { count: taskIds.length };
-  res.json(result);
+  res.json({ count: deleteResult.count });
 });
 
 // PATCH /api/tasks/bulk-move
@@ -340,7 +339,10 @@ router.delete("/tasks/:id", async (req, res) => {
     res.status(404).json({ error: "Task not found" });
     return;
   }
-  await prisma.task.delete({ where: { id: req.params.id } });
+  await prisma.$transaction([
+    prisma.taskTag.deleteMany({ where: { taskId: req.params.id } }),
+    prisma.task.delete({ where: { id: req.params.id } }),
+  ]);
   res.status(204).send();
 });
 

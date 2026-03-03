@@ -82,12 +82,14 @@ function App() {
       >
         {view === "dashboard" && <Dashboard key={refreshKey} onSelectProject={handleSelectProject} />}
         {view === "project" && activeProjectId && <ProjectView key={refreshKey} projectId={activeProjectId} />}
+        {view === "project" && !activeProjectId && <Dashboard key={refreshKey} onSelectProject={handleSelectProject} />}
         {view === "all-tasks" && <AllTasks key={refreshKey} />}
         {view === "due-soon" && <DueSoon key={refreshKey} />}
         {view === "tags" && <TagsPage key={refreshKey} onDataChange={handleDataChange} />}
         {view === "tag-tasks" && activeTagId && (
           <TagTasks key={refreshKey} tagId={activeTagId} onBack={() => handleSelectView("tags")} />
         )}
+        {view === "tag-tasks" && !activeTagId && <TagsPage key={refreshKey} onDataChange={handleDataChange} />}
       </Layout>
 
       {chatOpen ? (

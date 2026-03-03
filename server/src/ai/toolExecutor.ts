@@ -74,8 +74,9 @@ export async function executeTool(
     }
 
     case "get_project": {
+      const projectId = requireString(args, "projectId");
       return prisma.project.findUnique({
-        where: { id: args.projectId as string },
+        where: { id: projectId },
         include: {
           tasks: {
             include: { tags: { include: { tag: true } } },
@@ -102,7 +103,7 @@ export async function executeTool(
     }
 
     case "delete_project": {
-      const projectId = args.projectId as string;
+      const projectId = requireString(args, "projectId");
       await prisma.$transaction([
         prisma.taskTag.deleteMany({
           where: { task: { projectId } },
@@ -185,14 +186,15 @@ export async function executeTool(
     }
 
     case "complete_task": {
+      const taskId = requireString(args, "taskId");
       const existing = await prisma.task.findUnique({
-        where: { id: args.taskId as string },
+        where: { id: taskId },
       });
       if (!existing) {
-        throw new Error(`Task not found: ${args.taskId}`);
+        throw new Error(`Task not found: ${taskId}`);
       }
       return prisma.task.update({
-        where: { id: args.taskId as string },
+        where: { id: taskId },
         data: {
           completed: !existing.completed,
           completedAt: existing.completed ? null : new Date(),
@@ -202,9 +204,12 @@ export async function executeTool(
     }
 
     case "delete_task": {
-      return prisma.task.delete({
-        where: { id: args.taskId as string },
-      });
+      const taskId = requireString(args, "taskId");
+      await prisma.$transaction([
+        prisma.taskTag.deleteMany({ where: { taskId } }),
+        prisma.task.delete({ where: { id: taskId } }),
+      ]);
+      return { deleted: true };
     }
 
     case "list_tags": {
@@ -240,8 +245,8 @@ export async function executeTool(
     }
 
     case "add_tag_to_task": {
-      const taskId = args.taskId as string;
-      const tagId = args.tagId as string;
+      const taskId = requireString(args, "taskId");
+      const tagId = requireString(args, "tagId");
       const [taskExists, tagExists] = await Promise.all([
         prisma.task.findUnique({ where: { id: taskId }, select: { id: true } }),
         prisma.tag.findUnique({ where: { id: tagId }, select: { id: true } }),
@@ -256,8 +261,8 @@ export async function executeTool(
     }
 
     case "remove_tag_from_task": {
-      const taskId = args.taskId as string;
-      const tagId = args.tagId as string;
+      const taskId = requireString(args, "taskId");
+      const tagId = requireString(args, "tagId");
       const link = await prisma.taskTag.findUnique({
         where: { taskId_tagId: { taskId, tagId } },
       });
@@ -315,11 +320,11 @@ export async function executeTool(
 
     case "bulk_delete_tasks": {
       const taskIds = validateTaskIdsArg(args);
-      await prisma.$transaction([
+      const [, deleteResult] = await prisma.$transaction([
         prisma.taskTag.deleteMany({ where: { taskId: { in: taskIds } } }),
         prisma.task.deleteMany({ where: { id: { in: taskIds } } }),
       ]);
-      return { count: taskIds.length };
+      return { count: deleteResult.count };
     }
 
     case "bulk_move_tasks": {

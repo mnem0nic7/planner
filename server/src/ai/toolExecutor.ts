@@ -108,10 +108,33 @@ export async function executeTool(
       if (args.projectId) where.projectId = args.projectId as string;
       if (args.completed !== undefined) where.completed = args.completed as boolean;
       if (args.priority) where.priority = args.priority as Priority;
+
+      // Date range filters
+      const dueDateFilter: Record<string, Date> = {};
+      if (args.dueBefore) {
+        const d = validateDueDate(args.dueBefore);
+        if (d) dueDateFilter.lte = d;
+      }
+      if (args.dueAfter) {
+        const d = validateDueDate(args.dueAfter);
+        if (d) dueDateFilter.gte = d;
+      }
+      if (Object.keys(dueDateFilter).length > 0) {
+        where.dueDate = dueDateFilter;
+      }
+
+      // Sorting
+      const VALID_SORT_FIELDS = ["dueDate", "priority", "createdAt", "title"];
+      let orderBy: Record<string, string> = { createdAt: "desc" };
+      if (args.sortBy && typeof args.sortBy === "string" && VALID_SORT_FIELDS.includes(args.sortBy)) {
+        const dir = args.sortOrder === "asc" ? "asc" : "desc";
+        orderBy = { [args.sortBy]: dir };
+      }
+
       return prisma.task.findMany({
         where,
         include: { tags: { include: { tag: true } }, project: true },
-        orderBy: { createdAt: "desc" },
+        orderBy,
       });
     }
 

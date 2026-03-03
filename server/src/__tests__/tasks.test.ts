@@ -342,4 +342,33 @@ describe("Tasks API", () => {
       expect(found).toBeUndefined();
     });
   });
+
+  describe("list_tasks AI tool (enhanced)", () => {
+    it("filters by dueBefore via toolExecutor", async () => {
+      const { executeTool } = await import("../ai/toolExecutor.js");
+      const project = await prisma.project.create({ data: { name: `aitool-${Date.now()}` } });
+      await prisma.task.create({
+        data: { title: "Soon", projectId: project.id, sortOrder: 0, dueDate: new Date("2026-03-05") },
+      });
+      await prisma.task.create({
+        data: { title: "Later", projectId: project.id, sortOrder: 1, dueDate: new Date("2026-12-01") },
+      });
+      const result = await executeTool("list_tasks", { projectId: project.id, dueBefore: "2026-03-10" }) as unknown[];
+      expect(result.length).toBe(1);
+      expect((result[0] as { title: string }).title).toBe("Soon");
+    });
+
+    it("sorts by dueDate via toolExecutor", async () => {
+      const { executeTool } = await import("../ai/toolExecutor.js");
+      const project = await prisma.project.create({ data: { name: `aisort-${Date.now()}` } });
+      await prisma.task.create({
+        data: { title: "Later", projectId: project.id, sortOrder: 0, dueDate: new Date("2026-06-01") },
+      });
+      await prisma.task.create({
+        data: { title: "Soon", projectId: project.id, sortOrder: 1, dueDate: new Date("2026-03-01") },
+      });
+      const result = await executeTool("list_tasks", { projectId: project.id, sortBy: "dueDate", sortOrder: "asc" }) as { title: string }[];
+      expect(result[0].title).toBe("Soon");
+    });
+  });
 });

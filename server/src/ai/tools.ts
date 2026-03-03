@@ -109,7 +109,7 @@ export const tools: ChatCompletionTool[] = [
     function: {
       name: "list_tasks",
       description:
-        "List tasks with optional filters by project, completion status, or priority.",
+        "List tasks with optional filters by project, completion status, priority, due date range, and sorting.",
       parameters: {
         type: "object",
         properties: {
@@ -125,6 +125,24 @@ export const tools: ChatCompletionTool[] = [
             type: "string",
             enum: ["LOW", "MEDIUM", "HIGH", "URGENT"],
             description: "Filter by priority level.",
+          },
+          dueBefore: {
+            type: "string",
+            description: "Only include tasks due on or before this date (ISO 8601 format).",
+          },
+          dueAfter: {
+            type: "string",
+            description: "Only include tasks due on or after this date (ISO 8601 format).",
+          },
+          sortBy: {
+            type: "string",
+            enum: ["dueDate", "priority", "createdAt", "title"],
+            description: "Field to sort by. Defaults to createdAt.",
+          },
+          sortOrder: {
+            type: "string",
+            enum: ["asc", "desc"],
+            description: "Sort direction. Defaults to desc.",
           },
         },
         required: [],

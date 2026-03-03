@@ -67,8 +67,7 @@ export function Layout({ children, activeProjectId, activeView, activeTagId, onS
       </div>
 
       <main
-        className="flex-1 overflow-y-auto transition-[margin] duration-300"
-        style={{ marginRight: chatOpen ? 480 : 0 }}
+        className={`flex-1 overflow-y-auto transition-[margin] duration-300 ${chatOpen ? "sm:mr-[480px]" : ""}`}
       >
         {children}
       </main>

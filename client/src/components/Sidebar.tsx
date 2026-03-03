@@ -30,6 +30,7 @@ export function Sidebar({ activeProjectId, activeView, activeTagId, onSelectProj
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         <button
           onClick={() => onSelectView("dashboard")}
+          aria-current={activeView === "dashboard" ? "page" : undefined}
           className={`w-full text-left px-3 py-2 rounded text-sm font-medium ${
             activeView === "dashboard" ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-100"
           }`}
@@ -38,6 +39,7 @@ export function Sidebar({ activeProjectId, activeView, activeTagId, onSelectProj
         </button>
         <button
           onClick={() => onSelectView("all-tasks")}
+          aria-current={activeView === "all-tasks" ? "page" : undefined}
           className={`w-full text-left px-3 py-2 rounded text-sm font-medium ${
             activeView === "all-tasks" ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-100"
           }`}
@@ -46,6 +48,7 @@ export function Sidebar({ activeProjectId, activeView, activeTagId, onSelectProj
         </button>
         <button
           onClick={() => onSelectView("due-soon")}
+          aria-current={activeView === "due-soon" ? "page" : undefined}
           className={`w-full text-left px-3 py-2 rounded text-sm font-medium ${
             activeView === "due-soon" ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-100"
           }`}
@@ -54,6 +57,7 @@ export function Sidebar({ activeProjectId, activeView, activeTagId, onSelectProj
         </button>
         <button
           onClick={() => onSelectView("tags")}
+          aria-current={activeView === "tags" || activeView === "tag-tasks" ? "page" : undefined}
           className={`w-full text-left px-3 py-2 rounded text-sm font-medium ${
             activeView === "tags" || activeView === "tag-tasks" ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-100"
           }`}

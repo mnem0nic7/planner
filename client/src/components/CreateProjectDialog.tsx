@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -7,12 +7,25 @@ interface CreateProjectDialogProps {
 }
 
 const COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
+const COLOR_NAMES: Record<string, string> = {
+  "#3b82f6": "Blue", "#ef4444": "Red", "#10b981": "Green",
+  "#f59e0b": "Amber", "#8b5cf6": "Purple", "#ec4899": "Pink",
+};
 
 export function CreateProjectDialog({ open, onClose, onCreate }: CreateProjectDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState(COLORS[0]);
   const [submitting, setSubmitting] = useState(false);
+
+  // Reset form state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setName("");
+      setDescription("");
+      setColor(COLORS[0]);
+    }
+  }, [open]);
 
   if (!open) return null;
 
@@ -44,8 +57,9 @@ export function CreateProjectDialog({ open, onClose, onCreate }: CreateProjectDi
         <h2 className="text-lg font-semibold mb-4">New Project</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <label htmlFor="project-name" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
             <input
+              id="project-name"
               autoFocus
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -54,8 +68,9 @@ export function CreateProjectDialog({ open, onClose, onCreate }: CreateProjectDi
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label htmlFor="project-description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
             <textarea
+              id="project-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
@@ -71,7 +86,7 @@ export function CreateProjectDialog({ open, onClose, onCreate }: CreateProjectDi
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  aria-label={`Color ${c}`}
+                  aria-label={COLOR_NAMES[c] || c}
                   aria-pressed={color === c}
                   className={`w-8 h-8 rounded-full border-2 ${color === c ? "border-gray-900" : "border-transparent"}`}
                   style={{ backgroundColor: c }}

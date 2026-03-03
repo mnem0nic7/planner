@@ -27,8 +27,12 @@ export function TaskDetailPanel({ task, onClose, onUpdate, onRefresh }: TaskDeta
     tagsApi.list().then(setAllTags).catch(() => { /* tags load is non-critical */ });
   }, []);
 
-  // Sync active tags when task prop changes (e.g., parent refreshes)
+  // Sync all local state when task prop changes (e.g., parent refreshes after AI mutation)
   useEffect(() => {
+    setTitle(task.title);
+    setDescription(task.description || "");
+    setPriority(task.priority);
+    setDueDate(task.dueDate?.split("T")[0] || "");
     setActiveTagIds(new Set(task.tags.map((t) => t.tagId)));
   }, [task]);
 
@@ -103,19 +107,20 @@ export function TaskDetailPanel({ task, onClose, onUpdate, onRefresh }: TaskDeta
       <div className="w-full max-w-md bg-white h-full overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold">Task Details</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl" aria-label="Close task details">&times;</button>
         </div>
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded flex justify-between items-center">
             {error}
-            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">&times;</button>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600" aria-label="Dismiss error">&times;</button>
           </div>
         )}
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <label htmlFor="task-title" className="block text-sm font-medium text-gray-700 mb-1">Title</label>
             <input
+              id="task-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onBlur={handleSave}
@@ -124,13 +129,15 @@ export function TaskDetailPanel({ task, onClose, onUpdate, onRefresh }: TaskDeta
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+            <label htmlFor="task-priority" className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
             <select
+              id="task-priority"
               value={priority}
               onChange={(e) => {
                 setPriority(e.target.value as Priority);
+                // Save immediately for select elements — onChange doesn't always trigger blur
+                setTimeout(handleSave, 0);
               }}
-              onBlur={handleSave}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {PRIORITIES.map((p) => (
@@ -140,8 +147,9 @@ export function TaskDetailPanel({ task, onClose, onUpdate, onRefresh }: TaskDeta
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+            <label htmlFor="task-due-date" className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
             <input
+              id="task-due-date"
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
@@ -151,8 +159,9 @@ export function TaskDetailPanel({ task, onClose, onUpdate, onRefresh }: TaskDeta
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+            <label htmlFor="task-notes" className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
             <textarea
+              id="task-notes"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               onBlur={handleSave}

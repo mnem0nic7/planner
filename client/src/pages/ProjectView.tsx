@@ -50,7 +50,7 @@ export function ProjectView({ projectId }: ProjectViewProps) {
       <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded">{error}</div>
     </div>
   );
-  if (!project) return <div className="p-8 text-gray-400">Loading...</div>;
+  if (!project) return <p className="text-center py-16 text-gray-400 text-sm">Loading project...</p>;
 
   const completedCount = taskList.filter((t) => t.completed).length;
 
@@ -59,7 +59,7 @@ export function ProjectView({ projectId }: ProjectViewProps) {
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded flex justify-between items-center">
           {error}
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">&times;</button>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600" aria-label="Dismiss error">&times;</button>
         </div>
       )}
       <div className="mb-6">
